@@ -1,0 +1,260 @@
+# Custom Cursor Animation
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Cursor Effect</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      cursor: none;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow: hidden;
+      background: #080808;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Main cursor */
+    .cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 12px;
+      height: 12px;
+      background: #fff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: difference;
+    }
+
+    /* Outer cursor */
+    .cursor-follower {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 45px;
+      height: 45px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition:
+        width 0.3s ease,
+        height 0.3s ease,
+        background 0.3s ease,
+        border 0.3s ease;
+    }
+
+    /* Content */
+    .container {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 10vw, 8rem);
+      font-weight: 800;
+      letter-spacing: -5px;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 18px;
+      color: #999;
+      margin-bottom: 35px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid #fff;
+      background: transparent;
+      color: white;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 16px;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background: white;
+      color: black;
+      transform: scale(1.05);
+    }
+
+    /* Background glow */
+    .glow {
+      position: fixed;
+      width: 350px;
+      height: 350px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(100, 50, 255, 0.18),
+        transparent 70%
+      );
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Cursor hover state */
+    .cursor-follower.active {
+      width: 75px;
+      height: 75px;
+      background: rgba(255, 255, 255, 0.12);
+      border-color: transparent;
+      backdrop-filter: blur(2px);
+    }
+
+    /* Click animation */
+    .cursor-follower.click {
+      animation: clickEffect 0.4s ease;
+    }
+
+    @keyframes clickEffect {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(0.7);
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      * {
+        cursor: auto;
+      }
+
+      .cursor,
+      .cursor-follower,
+      .glow {
+        display: none;
+      }
+
+      h1 {
+        letter-spacing: -2px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Cursor -->
+  <div class="cursor"></div>
+  <div class="cursor-follower"></div>
+
+  <!-- Mouse glow -->
+  <div class="glow"></div>
+
+  <!-- Page content -->
+  <div class="container">
+
+    <h1>CURSOR</h1>
+
+    <p>Move your mouse around and experience the animation.</p>
+
+    <div class="buttons">
+      <button>Hover Me</button>
+      <button>Click Me</button>
+    </div>
+
+  </div>
+
+  <script>
+    const cursor = document.querySelector(".cursor");
+    const follower = document.querySelector(".cursor-follower");
+    const glow = document.querySelector(".glow");
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+
+    let followerX = mouseX;
+    let followerY = mouseY;
+
+    // Get mouse position
+    document.addEventListener("mousemove", (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      // Small cursor follows immediately
+      cursor.style.left = mouseX + "px";
+      cursor.style.top = mouseY + "px";
+
+      // Background glow
+      glow.style.left = mouseX + "px";
+      glow.style.top = mouseY + "px";
+    });
+
+    // Smooth follower animation
+    function animate() {
+      followerX += (mouseX - followerX) * 0.12;
+      followerY += (mouseY - followerY) * 0.12;
+
+      follower.style.left = followerX + "px";
+      follower.style.top = followerY + "px";
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Elements that trigger hover effect
+    const hoverElements = document.querySelectorAll(
+      "button, a, h1"
+    );
+
+    hoverElements.forEach((element) => {
+
+      element.addEventListener("mouseenter", () => {
+        follower.classList.add("active");
+      });
+
+      element.addEventListener("mouseleave", () => {
+        follower.classList.remove("active");
+      });
+
+    });
+
+    // Click animation
+    document.addEventListener("mousedown", () => {
+      follower.classList.add("click");
+    });
+
+    document.addEventListener("mouseup", () => {
+      setTimeout(() => {
+        follower.classList.remove("click");
+      }, 200);
+    });
+
+  </script>
+
+</body>
+</html>
