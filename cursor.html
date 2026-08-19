@@ -1,258 +1,1130 @@
-# Custom Cursor Animation
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Custom Cursor Effect</title>
+
+  <title>Professional Cursor Interaction</title>
 
   <style>
+    /* =====================================================
+       RESET
+    ===================================================== */
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      cursor: none;
+    }
+
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
+      background: #0b0b0c;
+      color: #f5f5f5;
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
       min-height: 100vh;
-      overflow: hidden;
-      background: #080808;
-      color: white;
-      font-family: Arial, Helvetica, sans-serif;
+      overflow-x: hidden;
+    }
+
+
+    /* =====================================================
+       CUSTOM CURSOR
+    ===================================================== */
+
+    .cursor-dot,
+    .cursor-ring {
+      position: fixed;
+      top: 0;
+      left: 0;
+
+      pointer-events: none;
+      z-index: 99999;
+
+      transform: translate3d(-50%, -50%, 0);
+
+      will-change: transform;
+    }
+
+    /* Small center dot */
+
+    .cursor-dot {
+      width: 6px;
+      height: 6px;
+
+      border-radius: 50%;
+      background: #ffffff;
+
+      transition:
+        width 0.25s cubic-bezier(.22, 1, .36, 1),
+        height 0.25s cubic-bezier(.22, 1, .36, 1),
+        background 0.25s ease;
+    }
+
+
+    /* Outer ring */
+
+    .cursor-ring {
+      width: 42px;
+      height: 42px;
+
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 50%;
+
+      transition:
+        width 0.45s cubic-bezier(.22, 1, .36, 1),
+        height 0.45s cubic-bezier(.22, 1, .36, 1),
+        border-color 0.3s ease,
+        background 0.3s ease,
+        opacity 0.3s ease;
+    }
+
+
+    /* Hover state */
+
+    body.cursor-hover .cursor-ring {
+      width: 68px;
+      height: 68px;
+
+      border-color: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    body.cursor-hover .cursor-dot {
+      width: 9px;
+      height: 9px;
+    }
+
+
+    /* View cursor */
+
+    body.cursor-view .cursor-ring {
+      width: 82px;
+      height: 82px;
+
+      border-color: transparent;
+      background: #ffffff;
+    }
+
+    body.cursor-view .cursor-dot {
+      width: 0;
+      height: 0;
+    }
+
+    .cursor-label {
+      position: fixed;
+
+      top: 0;
+      left: 0;
+
+      z-index: 100000;
+      pointer-events: none;
+
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+
+      color: #0b0b0c;
+
+      opacity: 0;
+
+      transform:
+        translate3d(-50%, -50%, 0)
+        scale(0.8);
+
+      transition:
+        opacity 0.25s ease,
+        transform 0.35s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    body.cursor-view .cursor-label {
+      opacity: 1;
+
+      transform:
+        translate3d(-50%, -50%, 0)
+        scale(1);
+    }
+
+
+    /* =====================================================
+       NAVIGATION
+    ===================================================== */
+
+    nav {
+      position: fixed;
+
+      top: 0;
+      left: 0;
+
+      width: 100%;
+
+      padding: 28px 5vw;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      z-index: 100;
+
+      mix-blend-mode: normal;
+    }
+
+    .logo {
+      color: #ffffff;
+
+      font-size: 15px;
+      font-weight: 800;
+
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 35px;
+    }
+
+    .nav-links a {
+      position: relative;
+
+      color: #8f8f93;
+
+      font-size: 13px;
+      font-weight: 500;
+
+      text-decoration: none;
+
+      transition: color 0.3s ease;
+    }
+
+    .nav-links a::after {
+      content: "";
+
+      position: absolute;
+
+      left: 0;
+      bottom: -5px;
+
+      width: 100%;
+      height: 1px;
+
+      background: #ffffff;
+
+      transform: scaleX(0);
+      transform-origin: right;
+
+      transition:
+        transform 0.4s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .nav-links a:hover {
+      color: #ffffff;
+    }
+
+    .nav-links a:hover::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+
+    /* =====================================================
+       HERO
+    ===================================================== */
+
+    .hero {
+      position: relative;
+
+      min-height: 100vh;
+
+      padding:
+        160px 5vw
+        100px;
+
       display: flex;
       align-items: center;
-      justify-content: center;
+
+      overflow: hidden;
     }
 
-    /* Main cursor */
-    .cursor {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 12px;
-      height: 12px;
-      background: #fff;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9999;
+
+    /* Subtle background */
+
+    .hero::before {
+      content: "";
+
+      position: absolute;
+
+      width: 700px;
+      height: 700px;
+
+      top: 50%;
+      left: 50%;
+
       transform: translate(-50%, -50%);
-      mix-blend-mode: difference;
-    }
 
-    /* Outer cursor */
-    .cursor-follower {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 45px;
-      height: 45px;
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      border-radius: 50%;
+      background:
+        radial-gradient(
+          circle,
+          rgba(255,255,255,0.055) 0%,
+          rgba(255,255,255,0) 68%
+        );
+
       pointer-events: none;
-      z-index: 9998;
-      transform: translate(-50%, -50%);
-      transition:
-        width 0.3s ease,
-        height 0.3s ease,
-        background 0.3s ease,
-        border 0.3s ease;
     }
 
-    /* Content */
-    .container {
-      text-align: center;
+
+    .hero-content {
       position: relative;
+
+      max-width: 1100px;
+
       z-index: 2;
     }
 
-    h1 {
-      font-size: clamp(3rem, 10vw, 8rem);
-      font-weight: 800;
-      letter-spacing: -5px;
-      margin-bottom: 20px;
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+
+      margin-bottom: 30px;
+
+      color: #88888d;
+
+      font-size: 12px;
+      font-weight: 600;
+
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
     }
 
-    p {
-      font-size: 18px;
-      color: #999;
-      margin-bottom: 35px;
-    }
+    .eyebrow span {
+      width: 6px;
+      height: 6px;
 
-    .buttons {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: 1px solid #fff;
-      background: transparent;
-      color: white;
-      padding: 15px 30px;
-      border-radius: 50px;
-      font-size: 16px;
-      transition: 0.3s ease;
-    }
-
-    button:hover {
-      background: white;
-      color: black;
-      transform: scale(1.05);
-    }
-
-    /* Background glow */
-    .glow {
-      position: fixed;
-      width: 350px;
-      height: 350px;
       border-radius: 50%;
-      background: radial-gradient(
-        circle,
-        rgba(100, 50, 255, 0.18),
-        transparent 70%
-      );
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 0;
+
+      background: #ffffff;
     }
 
-    /* Cursor hover state */
-    .cursor-follower.active {
-      width: 75px;
-      height: 75px;
-      background: rgba(255, 255, 255, 0.12);
-      border-color: transparent;
-      backdrop-filter: blur(2px);
+
+    h1 {
+      max-width: 1050px;
+
+      font-size:
+        clamp(4rem, 10vw, 10rem);
+
+      line-height: 0.88;
+
+      letter-spacing: -0.075em;
+
+      font-weight: 700;
     }
 
-    /* Click animation */
-    .cursor-follower.click {
-      animation: clickEffect 0.4s ease;
+    h1 .muted {
+      color: #4d4d51;
     }
 
-    @keyframes clickEffect {
-      0% {
-        transform: translate(-50%, -50%) scale(1);
-      }
 
-      50% {
-        transform: translate(-50%, -50%) scale(0.7);
-      }
+    .description {
+      max-width: 510px;
 
-      100% {
-        transform: translate(-50%, -50%) scale(1);
-      }
+      margin-top: 45px;
+
+      color: #85858a;
+
+      font-size: 16px;
+      line-height: 1.7;
     }
 
-    /* Mobile */
-    @media (max-width: 768px) {
-      * {
-        cursor: auto;
-      }
 
-      .cursor,
-      .cursor-follower,
-      .glow {
+    /* =====================================================
+       CTA
+    ===================================================== */
+
+    .actions {
+      display: flex;
+
+      gap: 15px;
+
+      margin-top: 40px;
+    }
+
+    .button {
+      position: relative;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      min-width: 145px;
+
+      padding: 15px 24px;
+
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 100px;
+
+      color: #ffffff;
+
+      font-size: 13px;
+      font-weight: 600;
+
+      text-decoration: none;
+
+      overflow: hidden;
+
+      transition:
+        border-color 0.3s ease,
+        transform 0.4s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .button::before {
+      content: "";
+
+      position: absolute;
+
+      inset: 0;
+
+      background: #ffffff;
+
+      transform: translateY(101%);
+
+      transition:
+        transform 0.45s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .button span {
+      position: relative;
+      z-index: 2;
+
+      transition: color 0.3s ease;
+    }
+
+    .button:hover {
+      border-color: #ffffff;
+      transform: translateY(-3px);
+    }
+
+    .button:hover::before {
+      transform: translateY(0);
+    }
+
+    .button:hover span {
+      color: #0b0b0c;
+    }
+
+
+    /* =====================================================
+       SCROLL INDICATOR
+    ===================================================== */
+
+    .scroll-indicator {
+      position: absolute;
+
+      right: 5vw;
+      bottom: 40px;
+
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      color: #66666a;
+
+      font-size: 10px;
+      font-weight: 600;
+
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .scroll-line {
+      width: 50px;
+      height: 1px;
+
+      background: #444448;
+    }
+
+
+    /* =====================================================
+       PROJECT SECTION
+    ===================================================== */
+
+    .projects {
+      padding: 120px 5vw;
+
+      background: #111113;
+    }
+
+    .section-title {
+      margin-bottom: 60px;
+
+      color: #77777b;
+
+      font-size: 12px;
+      font-weight: 600;
+
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .project-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
+      gap: 20px;
+    }
+
+    .project {
+      position: relative;
+
+      min-height: 380px;
+
+      padding: 30px;
+
+      border: 1px solid rgba(255,255,255,0.08);
+
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+
+      overflow: hidden;
+
+      transition:
+        transform 0.5s cubic-bezier(.22, 1, .36, 1),
+        border-color 0.4s ease;
+    }
+
+    .project::before {
+      content: "";
+
+      position: absolute;
+
+      inset: 0;
+
+      background:
+        radial-gradient(
+          circle at var(--x, 50%) var(--y, 50%),
+          rgba(255,255,255,0.12),
+          transparent 35%
+        );
+
+      opacity: 0;
+
+      transition: opacity 0.4s ease;
+    }
+
+    .project:hover {
+      transform: translateY(-8px);
+
+      border-color:
+        rgba(255,255,255,0.25);
+    }
+
+    .project:hover::before {
+      opacity: 1;
+    }
+
+    .project-number {
+      position: absolute;
+
+      top: 25px;
+      right: 25px;
+
+      color: #555559;
+
+      font-size: 12px;
+    }
+
+    .project h2 {
+      position: relative;
+
+      font-size: 32px;
+
+      letter-spacing: -0.04em;
+    }
+
+    .project p {
+      position: relative;
+
+      margin-top: 10px;
+
+      color: #77777c;
+
+      font-size: 13px;
+    }
+
+
+    /* =====================================================
+       MAGNETIC ELEMENT
+    ===================================================== */
+
+    .magnetic {
+      transition:
+        transform 0.15s ease-out;
+    }
+
+
+    /* =====================================================
+       RESPONSIVE
+    ===================================================== */
+
+    @media (max-width: 800px) {
+
+      .nav-links {
         display: none;
       }
 
+      .hero {
+        padding:
+          130px 25px
+          80px;
+      }
+
       h1 {
-        letter-spacing: -2px;
+        font-size:
+          clamp(3.5rem, 17vw, 7rem);
+      }
+
+      .description {
+        font-size: 15px;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .project-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .projects {
+        padding:
+          80px 25px;
+      }
+
+      .scroll-indicator {
+        display: none;
+      }
+    }
+
+
+    /* =====================================================
+       TOUCH DEVICES
+    ===================================================== */
+
+    @media (hover: none), (pointer: coarse) {
+
+      .cursor-dot,
+      .cursor-ring,
+      .cursor-label {
+        display: none;
+      }
+
+      .button,
+      .project,
+      a {
+        cursor: pointer;
       }
     }
   </style>
 </head>
 
+
 <body>
 
-  <!-- Cursor -->
-  <div class="cursor"></div>
-  <div class="cursor-follower"></div>
+  <!-- =====================================================
+       CUSTOM CURSOR
+  ===================================================== -->
 
-  <!-- Mouse glow -->
-  <div class="glow"></div>
+  <div class="cursor-dot"></div>
+  <div class="cursor-ring"></div>
+  <div class="cursor-label">View</div>
 
-  <!-- Page content -->
-  <div class="container">
 
-    <h1>CURSOR</h1>
+  <!-- =====================================================
+       NAVIGATION
+  ===================================================== -->
 
-    <p>Move your mouse around and experience the animation.</p>
+  <nav>
 
-    <div class="buttons">
-      <button>Hover Me</button>
-      <button>Click Me</button>
+    <a href="#" class="logo magnetic">
+      Studio.
+    </a>
+
+    <div class="nav-links">
+
+      <a href="#work" data-cursor="hover">
+        Work
+      </a>
+
+      <a href="#" data-cursor="hover">
+        About
+      </a>
+
+      <a href="#" data-cursor="hover">
+        Contact
+      </a>
+
     </div>
 
-  </div>
+  </nav>
+
+
+  <!-- =====================================================
+       HERO
+  ===================================================== -->
+
+  <main>
+
+    <section class="hero">
+
+      <div class="hero-content">
+
+        <div class="eyebrow">
+          <span></span>
+          Digital Experience
+        </div>
+
+        <h1>
+          Design that
+          <br>
+          <span class="muted">moves people.</span>
+        </h1>
+
+        <p class="description">
+          A refined cursor interaction system designed for
+          modern digital products, portfolios and creative
+          experiences.
+        </p>
+
+        <div class="actions">
+
+          <a
+            href="#work"
+            class="button magnetic"
+            data-cursor="hover"
+          >
+            <span>Explore Work</span>
+          </a>
+
+          <a
+            href="#"
+            class="button magnetic"
+            data-cursor="hover"
+          >
+            <span>Get in Touch</span>
+          </a>
+
+        </div>
+
+      </div>
+
+
+      <div class="scroll-indicator">
+
+        Scroll
+
+        <div class="scroll-line"></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         PROJECTS
+    =================================================== -->
+
+    <section class="projects" id="work">
+
+      <div class="section-title">
+        Selected Work
+      </div>
+
+      <div class="project-grid">
+
+        <article
+          class="project"
+          data-cursor="view"
+        >
+
+          <span class="project-number">
+            01
+          </span>
+
+          <h2>Digital Product</h2>
+
+          <p>
+            Product design / UX / UI
+          </p>
+
+        </article>
+
+
+        <article
+          class="project"
+          data-cursor="view"
+        >
+
+          <span class="project-number">
+            02
+          </span>
+
+          <h2>Brand Experience</h2>
+
+          <p>
+            Art direction / Interaction
+          </p>
+
+        </article>
+
+
+        <article
+          class="project"
+          data-cursor="view"
+        >
+
+          <span class="project-number">
+            03
+          </span>
+
+          <h2>Creative Website</h2>
+
+          <p>
+            Web design / Development
+          </p>
+
+        </article>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+  ===================================================== -->
 
   <script>
-    const cursor = document.querySelector(".cursor");
-    const follower = document.querySelector(".cursor-follower");
-    const glow = document.querySelector(".glow");
+
+    /* -----------------------------------------------------
+       CURSOR ELEMENTS
+    ----------------------------------------------------- */
+
+    const cursorDot =
+      document.querySelector(".cursor-dot");
+
+    const cursorRing =
+      document.querySelector(".cursor-ring");
+
+    const cursorLabel =
+      document.querySelector(".cursor-label");
+
+
+    /* -----------------------------------------------------
+       MOUSE POSITION
+    ----------------------------------------------------- */
 
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
 
-    let followerX = mouseX;
-    let followerY = mouseY;
+    let ringX = mouseX;
+    let ringY = mouseY;
 
-    // Get mouse position
-    document.addEventListener("mousemove", (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
 
-      // Small cursor follows immediately
-      cursor.style.left = mouseX + "px";
-      cursor.style.top = mouseY + "px";
+    document.addEventListener("mousemove", (event) => {
 
-      // Background glow
-      glow.style.left = mouseX + "px";
-      glow.style.top = mouseY + "px";
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+
     });
 
-    // Smooth follower animation
-    function animate() {
-      followerX += (mouseX - followerX) * 0.12;
-      followerY += (mouseY - followerY) * 0.12;
 
-      follower.style.left = followerX + "px";
-      follower.style.top = followerY + "px";
+    /* -----------------------------------------------------
+       SMOOTH CURSOR ANIMATION
+    ----------------------------------------------------- */
 
-      requestAnimationFrame(animate);
+    function animateCursor() {
+
+      /*
+        Smooth interpolation.
+
+        Higher number = faster
+        Lower number = smoother
+      */
+
+      ringX += (mouseX - ringX) * 0.14;
+      ringY += (mouseY - ringY) * 0.14;
+
+
+      cursorDot.style.transform =
+        `translate3d(
+          ${mouseX}px,
+          ${mouseY}px,
+          0
+        ) translate(-50%, -50%)`;
+
+
+      cursorRing.style.transform =
+        `translate3d(
+          ${ringX}px,
+          ${ringY}px,
+          0
+        ) translate(-50%, -50%)`;
+
+
+      cursorLabel.style.transform =
+        `translate3d(
+          ${ringX}px,
+          ${ringY}px,
+          0
+        ) translate(-50%, -50%)`;
+
+
+      requestAnimationFrame(animateCursor);
+
     }
 
-    animate();
+    animateCursor();
 
-    // Elements that trigger hover effect
-    const hoverElements = document.querySelectorAll(
-      "button, a, h1"
+
+    /* -----------------------------------------------------
+       CURSOR HOVER STATES
+    ----------------------------------------------------- */
+
+    const interactiveElements =
+      document.querySelectorAll(
+        "a, button, [data-cursor='hover']"
+      );
+
+
+    interactiveElements.forEach((element) => {
+
+      element.addEventListener(
+        "mouseenter",
+        () => {
+
+          document.body.classList.add(
+            "cursor-hover"
+          );
+
+        }
+      );
+
+
+      element.addEventListener(
+        "mouseleave",
+        () => {
+
+          document.body.classList.remove(
+            "cursor-hover"
+          );
+
+        }
+      );
+
+    });
+
+
+    /* -----------------------------------------------------
+       VIEW CURSOR
+    ----------------------------------------------------- */
+
+    const viewElements =
+      document.querySelectorAll(
+        "[data-cursor='view']"
+      );
+
+
+    viewElements.forEach((element) => {
+
+      element.addEventListener(
+        "mouseenter",
+        () => {
+
+          document.body.classList.add(
+            "cursor-view"
+          );
+
+          cursorLabel.textContent = "View";
+
+        }
+      );
+
+
+      element.addEventListener(
+        "mouseleave",
+        () => {
+
+          document.body.classList.remove(
+            "cursor-view"
+          );
+
+        }
+      );
+
+
+      /*
+        Dynamic spotlight effect
+        inside project cards.
+      */
+
+      element.addEventListener(
+        "mousemove",
+        (event) => {
+
+          const rect =
+            element.getBoundingClientRect();
+
+          const x =
+            ((event.clientX - rect.left) /
+              rect.width) * 100;
+
+          const y =
+            ((event.clientY - rect.top) /
+              rect.height) * 100;
+
+
+          element.style.setProperty(
+            "--x",
+            `${x}%`
+          );
+
+          element.style.setProperty(
+            "--y",
+            `${y}%`
+          );
+
+        }
+      );
+
+    });
+
+
+    /* -----------------------------------------------------
+       MAGNETIC BUTTONS
+    ----------------------------------------------------- */
+
+    const magneticElements =
+      document.querySelectorAll(
+        ".magnetic"
+      );
+
+
+    magneticElements.forEach((element) => {
+
+      element.addEventListener(
+        "mousemove",
+        (event) => {
+
+          const rect =
+            element.getBoundingClientRect();
+
+          const x =
+            event.clientX -
+            (rect.left + rect.width / 2);
+
+          const y =
+            event.clientY -
+            (rect.top + rect.height / 2);
+
+
+          const strength = 0.18;
+
+
+          element.style.transform =
+            `translate(
+              ${x * strength}px,
+              ${y * strength}px
+            )`;
+
+        }
+      );
+
+
+      element.addEventListener(
+        "mouseleave",
+        () => {
+
+          element.style.transform =
+            "translate(0, 0)";
+
+        }
+      );
+
+    });
+
+
+    /* -----------------------------------------------------
+       CLICK FEEDBACK
+    ----------------------------------------------------- */
+
+    document.addEventListener(
+      "mousedown",
+      () => {
+
+        cursorRing.style.transition =
+          "transform 0.15s ease";
+
+        cursorRing.style.scale = "0.85";
+
+      }
     );
 
-    hoverElements.forEach((element) => {
 
-      element.addEventListener("mouseenter", () => {
-        follower.classList.add("active");
-      });
+    document.addEventListener(
+      "mouseup",
+      () => {
 
-      element.addEventListener("mouseleave", () => {
-        follower.classList.remove("active");
-      });
+        cursorRing.style.scale = "1";
 
-    });
+      }
+    );
 
-    // Click animation
-    document.addEventListener("mousedown", () => {
-      follower.classList.add("click");
-    });
 
-    document.addEventListener("mouseup", () => {
-      setTimeout(() => {
-        follower.classList.remove("click");
-      }, 200);
-    });
+    /* -----------------------------------------------------
+       HIDE CURSOR WHEN LEAVING WINDOW
+    ----------------------------------------------------- */
+
+    document.addEventListener(
+      "mouseleave",
+      () => {
+
+        cursorDot.style.opacity = "0";
+        cursorRing.style.opacity = "0";
+
+      }
+    );
+
+
+    document.addEventListener(
+      "mouseenter",
+      () => {
+
+        cursorDot.style.opacity = "1";
+        cursorRing.style.opacity = "1";
+
+      }
+    );
 
   </script>
 
