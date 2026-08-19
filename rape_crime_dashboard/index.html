@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>India Crime Data — 2023</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+
+    <main>
+      <section>
+        <p>INDIA · NCRB · 2023</p>
+
+        <h1>Reported Rape Cases</h1>
+
+        <p>
+          A closer look at the circumstances recorded in official crime data.
+        </p>
+
+        <h2 id="totalCases">Loading...</h2>
+
+        <p>total cases registered</p>
+      </section>
+
+      <!-- =================================================
+             STATUS
+        ================================================== -->
+
+      <section>
+        <p id="status">Loading NCRB data...</p>
+      </section>
+
+      <!-- =================================================
+             WHERE
+        ================================================== -->
+
+      <section>
+        <h2>Where were cases registered?</h2>
+
+        <p>
+          State and Union Territory distribution of cases registered during
+          2023.
+        </p>
+
+        <canvas id="stateChart"></canvas>
+      </section>
+
+      <!-- =================================================
+             CIRCUMSTANCES
+        ================================================== -->
+
+      <section>
+        <h2>Circumstances recorded</h2>
+
+        <p>
+          The data contains several statutory categories describing the
+          circumstances recorded in registered cases.
+        </p>
+
+        <canvas id="circumstancesChart"></canvas>
+      </section>
+
+      <!-- =================================================
+             CUSTODIAL
+        ================================================== -->
+
+      <section>
+        <h2>Custodial circumstances</h2>
+
+        <canvas id="custodialChart"></canvas>
+      </section>
+
+      <!-- =================================================
+             POWER / TRUST
+        ================================================== -->
+
+      <section>
+        <h2>Position of trust, authority and dominance</h2>
+
+        <canvas id="trustChart"></canvas>
+      </section>
+
+      <!-- =================================================
+             AGE RELATED
+        ================================================== -->
+
+      <section>
+        <h2>Age-related categories</h2>
+
+        <canvas id="ageChart"></canvas>
+      </section>
+
+      <!-- =================================================
+             OTHER CIRCUMSTANCES
+        ================================================== -->
+
+      <section>
+        <h2>Other recorded circumstances</h2>
+
+        <canvas id="otherChart"></canvas>
+      </section>
+
+      <!-- =================================================
+             DATA NOTE
+        ================================================== -->
+
+      <section>
+        <h2>About this data</h2>
+
+        <p>
+          These figures represent cases registered and reported in the NCRB
+          Crime in India 2023 dataset.
+        </p>
+
+        <p>
+          Categories may overlap because a single registered case can fall under
+          more than one statutory category.
+        </p>
+
+        <p>Source: National Crime Records Bureau, Crime in India 2023.</p>
+      </section>
+    </main>
+
+    <script>
+      // =====================================================
+      // FILE
+      // =====================================================
+
+      const csvFile = "NCRB_CII_2023_Table_3A.11_0.csv";
+
+      // =====================================================
+      // HTML ELEMENTS
+      // =====================================================
+
+      const totalCasesElement = document.getElementById("totalCases");
+
+      const statusElement = document.getElementById("status");
+
+      // =====================================================
+      // CSV PARSER
+      // =====================================================
+
+      function parseCSV(csv) {
+        const lines = csv.split(/\r?\n/).filter(function (line) {
+          return line.trim() !== "";
+        });
+
+        const headers = parseCSVLine(lines[0]);
+
+        const rows = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]);
+
+          if (values.length === headers.length) {
+            const row = {};
+
+            headers.forEach(function (header, index) {
+              row[header] = values[index];
+            });
+
+            rows.push(row);
+          }
+        }
+
+        return rows;
+      }
+
+      // =====================================================
+      // HANDLE COMMAS INSIDE CSV VALUES
+      // =====================================================
+
+      function parseCSVLine(line) {
+        const values = [];
+
+        let current = "";
+
+        let insideQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const character = line[i];
+
+          if (character === '"') {
+            if (insideQuotes && line[i + 1] === '"') {
+              current += '"';
+
+              i++;
+            } else {
+              insideQuotes = !insideQuotes;
+            }
+          } else if (character === "," && !insideQuotes) {
+            values.push(cleanValue(current));
+
+            current = "";
+          } else {
+            current += character;
+          }
+        }
+
+        values.push(cleanValue(current));
+
+        return values;
+      }
+
+      // =====================================================
+      // CLEAN CSV VALUE
+      // =====================================================
+
+      function cleanValue(value) {
+        return value
+          .replace(/^\uFEFF/, "")
+          .replace(/\*\*/g, "")
+          .trim();
+      }
+
+      // =====================================================
+      // CONVERT NUMBER
+      // =====================================================
+
+      function number(value) {
+        const cleaned = String(value)
+          .replace(/,/g, "")
+          .replace(/\*/g, "")
+          .trim();
+
+        const result = Number(cleaned);
+
+        if (Number.isNaN(result)) {
+          return 0;
+        }
+
+        return result;
+      }
+
+      // =====================================================
+      // FIND COLUMN
+      // =====================================================
+
+      function findColumn(headers, words) {
+        return headers.find(function (header) {
+          const lower = header.toLowerCase();
+
+          return words.every(function (word) {
+            return lower.includes(word.toLowerCase());
+          });
+        });
+      }
+
+      // =====================================================
+      // SUM COLUMN
+      // =====================================================
+
+      function sumColumn(rows, column) {
+        if (!column) {
+          return 0;
+        }
+
+        return rows.reduce(function (total, row) {
+          return total + number(row[column]);
+        }, 0);
+      }
+
+      // =====================================================
+      // FORMAT NUMBER
+      // =====================================================
+
+      function formatNumber(value) {
+        return value.toLocaleString("en-IN");
+      }
+
+      // =====================================================
+      // LOAD DATA
+      // =====================================================
+
+      async function loadData() {
+        try {
+          statusElement.textContent = "Reading NCRB dataset...";
+
+          const response = await fetch(csvFile);
+
+          if (!response.ok) {
+            throw new Error("CSV file could not be loaded.");
+          }
+
+          const csv = await response.text();
+
+          const rows = parseCSV(csv);
+
+          if (rows.length === 0) {
+            throw new Error("No data found in CSV.");
+          }
+
+          buildDashboard(rows);
+
+          statusElement.textContent = "NCRB 2023 data loaded successfully.";
+        } catch (error) {
+          console.error(error);
+
+          statusElement.textContent =
+            "Unable to load the CSV file. " +
+            "Make sure index.html and the CSV " +
+            "are in the same folder and open " +
+            "the project through a local server.";
+        }
+      }
+
+      // =====================================================
+      // BUILD DASHBOARD
+      // =====================================================
+
+      function buildDashboard(rows) {
+        const headers = Object.keys(rows[0]);
+
+        // -------------------------------------------------
+        // IMPORTANT COLUMNS
+        // -------------------------------------------------
+
+        const totalColumn = findColumn(headers, ["rape", "total"]);
+
+        const stateColumn = findColumn(headers, ["state/ut"]);
+
+        // -------------------------------------------------
+        // TOTAL
+        // -------------------------------------------------
+
+        const total = sumColumn(rows, totalColumn);
+
+        totalCasesElement.textContent = formatNumber(total);
+
+        // -------------------------------------------------
+        // STATE DATA
+        // -------------------------------------------------
+
+        const stateData = rows
+          .map(function (row) {
+            return {
+              state: row[stateColumn],
+
+              value: number(row[totalColumn]),
+            };
+          })
+          .filter(function (item) {
+            return item.state && item.value > 0;
+          })
+          .sort(function (a, b) {
+            return b.value - a.value;
+          });
+
+        createStateChart(stateData);
+
+        // -------------------------------------------------
+        // CIRCUMSTANCES
+        // -------------------------------------------------
+
+        const circumstances = [
+          {
+            label: "Custodial rape",
+
+            column: findColumn(headers, ["custody", "total"]),
+          },
+
+          {
+            label: "Relative / guardian / teacher / person in trust",
+
+            column: findColumn(headers, ["relative", "guardian", "teacher"]),
+          },
+
+          {
+            label: "On pregnant women",
+
+            column: findColumn(headers, ["pregnant"]),
+          },
+
+          {
+            label: "Women below 16",
+
+            column: findColumn(headers, ["below 16"]),
+          },
+
+          {
+            label: "Unable to give consent",
+
+            column: findColumn(headers, ["incapable", "consent"]),
+          },
+
+          {
+            label: "Control / dominance",
+
+            column: findColumn(headers, ["control", "dominance"]),
+          },
+
+          {
+            label: "Mental / physical disability",
+
+            column: findColumn(headers, ["mental", "physical", "disability"]),
+          },
+
+          {
+            label: "Endanger life after rape",
+
+            column: findColumn(headers, ["endanger", "life"]),
+          },
+
+          {
+            label: "Repeated rape",
+
+            column: findColumn(headers, ["repeated"]),
+          },
+
+          {
+            label: "Gang rape",
+
+            column: findColumn(headers, ["gang rape"]),
+          },
+
+          {
+            label: "Repeat offenders",
+
+            column: findColumn(headers, ["repeat offenders"]),
+          },
+        ];
+
+        const circumstanceData = circumstances
+          .map(function (item) {
+            return {
+              label: item.label,
+
+              value: sumColumn(rows, item.column),
+            };
+          })
+          .filter(function (item) {
+            return item.value > 0;
+          })
+          .sort(function (a, b) {
+            return b.value - a.value;
+          });
+
+        createHorizontalChart(
+          "circumstancesChart",
+          circumstanceData,
+          "Reported cases",
+        );
+
+        // -------------------------------------------------
+        // CUSTODIAL
+        // -------------------------------------------------
+
+        const custodial = [
+          {
+            label: "Police personnel",
+
+            column: findColumn(headers, ["police personnel"]),
+          },
+
+          {
+            label: "Public servant",
+
+            column: findColumn(headers, ["public servant"]),
+          },
+
+          {
+            label: "Armed forces",
+
+            column: findColumn(headers, ["armed forces"]),
+          },
+
+          {
+            label: "Jail / remand / custody staff",
+
+            column: findColumn(headers, ["jail", "custody"]),
+          },
+
+          {
+            label: "Hospital management / staff",
+
+            column: findColumn(headers, ["hospital"]),
+          },
+        ];
+
+        const custodialData = custodial
+          .map(function (item) {
+            return {
+              label: item.label,
+
+              value: sumColumn(rows, item.column),
+            };
+          })
+          .filter(function (item) {
+            return item.value > 0;
+          });
+
+        createHorizontalChart(
+          "custodialChart",
+          custodialData,
+          "Reported cases",
+        );
+
+        // -------------------------------------------------
+        // TRUST / AUTHORITY
+        // -------------------------------------------------
+
+        const trust = [
+          {
+            label: "Relative / guardian / teacher / trust",
+
+            column: findColumn(headers, ["relative", "guardian", "teacher"]),
+          },
+
+          {
+            label: "Person in authority",
+
+            column: findColumn(headers, ["person in authority"]),
+          },
+
+          {
+            label: "Person in control / dominance",
+
+            column: findColumn(headers, ["control", "dominance"]),
+          },
+
+          {
+            label: "Separated husband",
+
+            column: findColumn(headers, ["separated husband"]),
+          },
+        ];
+
+        const trustData = trust
+          .map(function (item) {
+            return {
+              label: item.label,
+
+              value: sumColumn(rows, item.column),
+            };
+          })
+          .filter(function (item) {
+            return item.value > 0;
+          });
+
+        createHorizontalChart("trustChart", trustData, "Reported cases");
+
+        // -------------------------------------------------
+        // AGE
+        // -------------------------------------------------
+
+        const age = [
+          {
+            label: "Women below 16",
+
+            column: findColumn(headers, ["below 16"]),
+          },
+
+          {
+            label: "Girl below 12",
+
+            column: findColumn(headers, ["girl below 12"]),
+          },
+
+          {
+            label: "Rape / gang rape of girl below 16",
+
+            column: findColumn(headers, ["gang rape", "girl below 16"]),
+          },
+
+          {
+            label: "Rape / gang rape of girl below 12",
+
+            column: findColumn(headers, ["gang rape", "girl below 12"]),
+          },
+        ];
+
+        const ageData = age
+          .map(function (item) {
+            return {
+              label: item.label,
+
+              value: sumColumn(rows, item.column),
+            };
+          })
+          .filter(function (item) {
+            return item.value > 0;
+          });
+
+        createHorizontalChart("ageChart", ageData, "Reported cases");
+
+        // -------------------------------------------------
+        // OTHER
+        // -------------------------------------------------
+
+        const other = [
+          {
+            label: "Pregnant women",
+
+            column: findColumn(headers, ["pregnant"]),
+          },
+
+          {
+            label: "Unable to give consent",
+
+            column: findColumn(headers, ["incapable", "consent"]),
+          },
+
+          {
+            label: "Mental / physical disability",
+
+            column: findColumn(headers, ["mental", "physical", "disability"]),
+          },
+
+          {
+            label: "Repeated rape",
+
+            column: findColumn(headers, ["repeated"]),
+          },
+
+          {
+            label: "Endanger life after rape",
+
+            column: findColumn(headers, ["endanger", "life"]),
+          },
+
+          {
+            label: "Punishment for repeat offenders",
+
+            column: findColumn(headers, ["repeat offenders"]),
+          },
+        ];
+
+        const otherData = other
+          .map(function (item) {
+            return {
+              label: item.label,
+
+              value: sumColumn(rows, item.column),
+            };
+          })
+          .filter(function (item) {
+            return item.value > 0;
+          });
+
+        createHorizontalChart("otherChart", otherData, "Reported cases");
+      }
+
+      // =====================================================
+      // STATE CHART
+      // =====================================================
+
+      function createStateChart(data) {
+        new Chart(
+          document.getElementById("stateChart"),
+
+          {
+            type: "bar",
+
+            data: {
+              labels: data.map(function (item) {
+                return item.state;
+              }),
+
+              datasets: [
+                {
+                  label: "Reported cases",
+
+                  data: data.map(function (item) {
+                    return item.value;
+                  }),
+
+                  backgroundColor: "#c94b4b",
+                },
+              ],
+            },
+
+            options: {
+              indexAxis: "y",
+
+              responsive: true,
+
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+            },
+          },
+        );
+      }
+
+      // =====================================================
+      // HORIZONTAL CHART
+      // =====================================================
+
+      function createHorizontalChart(canvasId, data, label) {
+        new Chart(
+          document.getElementById(canvasId),
+
+          {
+            type: "bar",
+
+            data: {
+              labels: data.map(function (item) {
+                return item.label;
+              }),
+
+              datasets: [
+                {
+                  label: label,
+
+                  data: data.map(function (item) {
+                    return item.value;
+                  }),
+
+                  backgroundColor: "#b83b4b",
+                },
+              ],
+            },
+
+            options: {
+              indexAxis: "y",
+
+              responsive: true,
+
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+            },
+          },
+        );
+      }
+
+      // =====================================================
+      // START
+      // =====================================================
+
+      loadData();
+    </script>
+  </body>
+</html>
