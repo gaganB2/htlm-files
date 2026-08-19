@@ -2,50 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>NCRB · Crime in India 2023</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <title>NCRB 2023 — Rape Cases in India</title>
 
     <style>
-      /* =========================================================
-           CINEMATIC DOCUMENTARY DESIGN SYSTEM
-        ========================================================= */
+      @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 
       :root {
-        --black: #050505;
-        --black-2: #090909;
-        --black-3: #111111;
+        --bg: #050810;
+        --bg-blue: #071426;
 
-        --red: #ff3347;
-        --red-bright: #ff5363;
-        --red-dark: #9d1425;
+        --white: #f7f8fc;
+        --muted: #a8b1c2;
 
-        --orange: #ff8a32;
-        --amber: #e8b45d;
+        --blue: #238cff;
+        --blue-bright: #53b5ff;
+        --blue-dark: #0754aa;
 
-        --white: #f7f5f1;
-        --white-soft: rgba(247, 245, 241, 0.72);
-        --white-muted: rgba(247, 245, 241, 0.43);
-        --white-faint: rgba(247, 245, 241, 0.2);
+        --red: #ff3158;
+        --red-soft: #ff637e;
 
-        --blue: #4cb8ff;
-        --blue-soft: rgba(76, 184, 255, 0.16);
+        --gold: #ffc85a;
 
-        --line: rgba(255, 255, 255, 0.105);
+        --glass: rgba(12, 22, 39, 0.62);
+        --glass-light: rgba(25, 43, 69, 0.42);
 
-        --panel: rgba(16, 16, 16, 0.76);
+        --border: rgba(255, 255, 255, 0.09);
 
-        --panel-light: rgba(255, 255, 255, 0.035);
+        --shadow:
+          0 30px 80px rgba(0, 0, 0, 0.48), 0 10px 30px rgba(0, 70, 160, 0.1);
 
-        --radius: 18px;
+        --radius: 24px;
       }
-
-      /* =========================================================
-           RESET
-        ========================================================= */
 
       * {
         box-sizing: border-box;
@@ -57,429 +46,338 @@
 
       body {
         margin: 0;
-
         min-height: 100vh;
-
-        overflow-x: hidden;
 
         color: var(--white);
 
+        font-family: "DM Sans", sans-serif;
+
         background:
           radial-gradient(
-            circle at 72% -10%,
-            rgba(112, 18, 28, 0.28),
-            transparent 32%
-          ),
-          radial-gradient(
-            circle at -10% 65%,
-            rgba(62, 17, 20, 0.22),
+            circle at 10% 10%,
+            rgba(0, 111, 255, 0.16),
             transparent 30%
           ),
-          linear-gradient(135deg, #030303 0%, #090909 48%, #040404 100%);
+          radial-gradient(
+            circle at 90% 30%,
+            rgba(255, 30, 75, 0.09),
+            transparent 28%
+          ),
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(0, 102, 255, 0.12),
+            transparent 35%
+          ),
+          linear-gradient(135deg, #02040a 0%, #07101d 48%, #04070d 100%);
 
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
+        overflow-x: hidden;
       }
 
-      /* =========================================================
-           CINEMATIC BACKGROUND
-        ========================================================= */
+      /* --------------------------------------------------
+           ATMOSPHERE
+        -------------------------------------------------- */
 
-      .scene {
+      .atmosphere {
         position: fixed;
-
         inset: 0;
-
-        z-index: 0;
-
+        pointer-events: none;
+        z-index: -1;
         overflow: hidden;
-
-        pointer-events: none;
       }
 
-      .scene::before {
-        content: "";
-
+      .orb {
         position: absolute;
-
-        inset: 0;
-
-        background: radial-gradient(
-          ellipse at 50% 0%,
-          transparent 15%,
-          rgba(0, 0, 0, 0.3) 75%,
-          rgba(0, 0, 0, 0.72) 100%
-        );
-
-        pointer-events: none;
-      }
-
-      .scene::after {
-        content: "";
-
-        position: absolute;
-
-        inset: 0;
-
-        opacity: 0.16;
-
-        background-image:
-          linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-          linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.018) 1px,
-            transparent 1px
-          );
-
-        background-size: 90px 90px;
-
-        -webkit-mask-image: linear-gradient(to bottom, black, transparent 78%);
-
-        mask-image: linear-gradient(to bottom, black, transparent 78%);
-      }
-
-      .light {
-        position: absolute;
-
         border-radius: 50%;
-
-        filter: blur(100px);
-
-        will-change: transform;
+        filter: blur(70px);
+        opacity: 0.28;
+        animation: breathe 9s ease-in-out infinite;
       }
 
-      .light-red {
-        width: 600px;
+      .orb.blue {
+        width: 420px;
+        height: 420px;
 
-        height: 600px;
+        left: -160px;
+        top: 180px;
 
-        left: -260px;
-
-        top: 15%;
-
-        background: radial-gradient(
-          circle,
-          rgba(255, 30, 52, 0.15),
-          transparent 70%
-        );
-
-        animation: redDrift 17s ease-in-out infinite;
+        background: #006eff;
       }
 
-      .light-orange {
-        width: 480px;
+      .orb.red {
+        width: 340px;
+        height: 340px;
 
-        height: 480px;
+        right: -120px;
+        top: 420px;
 
-        right: -220px;
+        background: #ff1645;
 
-        top: 28%;
-
-        background: radial-gradient(
-          circle,
-          rgba(255, 112, 30, 0.09),
-          transparent 70%
-        );
-
-        animation: orangeDrift 20s ease-in-out infinite;
+        animation-delay: -3s;
       }
 
-      .light-blue {
-        width: 430px;
+      .orb.gold {
+        width: 250px;
+        height: 250px;
 
-        height: 430px;
+        right: 20%;
+        bottom: -130px;
 
-        left: 43%;
+        background: #ffb300;
 
-        bottom: -280px;
+        opacity: 0.09;
 
-        background: radial-gradient(
-          circle,
-          rgba(53, 144, 210, 0.08),
-          transparent 70%
-        );
-
-        animation: blueDrift 23s ease-in-out infinite;
+        animation-delay: -5s;
       }
-
-      @keyframes redDrift {
-        0%,
-        100% {
-          transform: translate3d(0, 0, 0) scale(1);
-        }
-
-        50% {
-          transform: translate3d(180px, -60px, 0) scale(1.16);
-        }
-      }
-
-      @keyframes orangeDrift {
-        0%,
-        100% {
-          transform: translate3d(0, 0, 0);
-        }
-
-        50% {
-          transform: translate3d(-120px, 90px, 0);
-        }
-      }
-
-      @keyframes blueDrift {
-        0%,
-        100% {
-          transform: translate3d(0, 0, 0);
-        }
-
-        50% {
-          transform: translate3d(90px, -100px, 0);
-        }
-      }
-
-      /* =========================================================
-           FILM GRAIN
-        ========================================================= */
 
       .grain {
-        position: fixed;
+        position: absolute;
+        inset: 0;
 
-        inset: -50%;
+        opacity: 0.045;
 
-        z-index: 30;
+        background-image: radial-gradient(
+          rgba(255, 255, 255, 0.8) 0.6px,
+          transparent 0.6px
+        );
 
-        pointer-events: none;
+        background-size: 5px 5px;
 
-        opacity: 0.035;
-
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='.75'/%3E%3C/svg%3E");
-
-        animation: grainMove 0.18s steps(2) infinite;
+        mix-blend-mode: overlay;
       }
 
-      @keyframes grainMove {
-        0% {
-          transform: translate(0, 0);
-        }
+      .light-beam {
+        position: absolute;
 
-        25% {
-          transform: translate(2%, -1%);
+        width: 55vw;
+        height: 1px;
+
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(47, 145, 255, 0.6),
+          transparent
+        );
+
+        filter: blur(2px);
+
+        transform: rotate(-25deg);
+
+        left: -10%;
+        top: 35%;
+
+        opacity: 0.25;
+
+        animation: beam 12s ease-in-out infinite;
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.22;
         }
 
         50% {
-          transform: translate(-1%, 2%);
+          transform: scale(1.16);
+          opacity: 0.34;
         }
+      }
 
-        75% {
-          transform: translate(1%, 1%);
-        }
-
+      @keyframes beam {
+        0%,
         100% {
-          transform: translate(-2%, -1%);
+          transform: translateX(-5%) rotate(-25deg);
+        }
+
+        50% {
+          transform: translateX(30%) rotate(-25deg);
         }
       }
 
-      /* =========================================================
-           APP
-        ========================================================= */
+      /* --------------------------------------------------
+           PAGE
+        -------------------------------------------------- */
 
-      .app {
-        position: relative;
-
-        z-index: 2;
-
-        width: min(1480px, calc(100% - 44px));
-
+      .page {
+        width: min(1500px, 94vw);
         margin: auto;
-
-        padding: 20px 0 70px;
+        padding: 28px 0 70px;
       }
 
-      /* =========================================================
+      /* --------------------------------------------------
            TOP BAR
-        ========================================================= */
+        -------------------------------------------------- */
 
-      .top {
+      .topbar {
         display: flex;
-
         align-items: center;
-
         justify-content: space-between;
 
-        height: 40px;
-
-        margin-bottom: 16px;
-
-        color: var(--white-muted);
-
-        font-size: 9px;
-
-        font-weight: 550;
-
-        letter-spacing: 0.19em;
-
-        text-transform: uppercase;
+        margin-bottom: 28px;
       }
 
       .brand {
         display: flex;
-
         align-items: center;
+        gap: 12px;
 
-        gap: 9px;
+        font-size: 13px;
+        font-weight: 700;
+
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+
+        color: #dce7f7;
       }
 
-      .brand-line {
-        width: 24px;
+      .brand-dot {
+        width: 9px;
+        height: 9px;
 
-        height: 1px;
+        border-radius: 50%;
 
-        background: var(--red);
+        background: var(--blue-bright);
 
-        box-shadow: 0 0 10px rgba(255, 51, 71, 0.7);
+        box-shadow:
+          0 0 12px var(--blue),
+          0 0 28px rgba(35, 140, 255, 0.6);
+
+        animation: dotPulse 3s ease-in-out infinite;
       }
 
-      .brand-name {
-        color: rgba(247, 245, 241, 0.65);
+      @keyframes dotPulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 8px var(--blue),
+            0 0 18px rgba(35, 140, 255, 0.4);
+        }
+
+        50% {
+          box-shadow:
+            0 0 14px var(--blue-bright),
+            0 0 34px rgba(35, 140, 255, 0.8);
+        }
       }
 
-      .edition {
-        color: rgba(247, 245, 241, 0.32);
+      .year {
+        color: var(--muted);
+        font-size: 13px;
+        letter-spacing: 0.08em;
       }
 
-      /* =========================================================
-           DASHBOARD INTRO
-        ========================================================= */
+      /* --------------------------------------------------
+           HEADER
+        -------------------------------------------------- */
 
-      .dashboard-head {
+      .headline {
         display: grid;
 
         grid-template-columns:
-          1fr
-          auto;
+          minmax(0, 1.7fr)
+          minmax(280px, 0.8fr);
 
-        align-items: end;
+        gap: 30px;
 
-        gap: 28px;
+        margin-bottom: 22px;
+      }
 
-        padding: 26px 4px 28px;
-
-        border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+      .headline-copy {
+        padding: 18px 0;
       }
 
       .eyebrow {
-        display: flex;
-
+        display: inline-flex;
         align-items: center;
-
         gap: 9px;
 
-        margin: 0 0 11px;
+        color: var(--blue-bright);
 
-        color: var(--red-bright);
-
-        font-size: 9px;
-
+        font-size: 12px;
         font-weight: 700;
 
-        letter-spacing: 0.23em;
-
+        letter-spacing: 0.15em;
         text-transform: uppercase;
+
+        margin-bottom: 16px;
       }
 
       .eyebrow::before {
         content: "";
 
-        width: 6px;
+        width: 30px;
+        height: 1px;
 
-        height: 6px;
+        background: var(--blue-bright);
 
-        border-radius: 50%;
-
-        background: var(--red);
-
-        box-shadow: 0 0 14px rgba(255, 51, 71, 0.8);
-
-        animation: redPulse 1.8s ease-in-out infinite;
+        box-shadow: 0 0 10px var(--blue);
       }
 
-      @keyframes redPulse {
-        0%,
-        100% {
-          opacity: 0.45;
-          transform: scale(0.8);
-        }
-
-        50% {
-          opacity: 1;
-          transform: scale(1.25);
-        }
-      }
-
-      .dashboard-head h1 {
+      h1 {
         margin: 0;
 
-        max-width: 780px;
+        max-width: 950px;
 
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: "Manrope", sans-serif;
 
-        font-size: clamp(34px, 4.7vw, 67px);
+        font-size: clamp(42px, 5.2vw, 82px);
 
-        font-weight: 400;
-
-        line-height: 0.98;
+        line-height: 0.96;
 
         letter-spacing: -0.055em;
 
-        color: var(--white);
+        font-weight: 800;
+
+        background: linear-gradient(
+          120deg,
+          #ffffff 0%,
+          #e8f2ff 45%,
+          #82c5ff 100%
+        );
+
+        -webkit-background-clip: text;
+        background-clip: text;
+
+        color: transparent;
+
+        text-shadow: 0 0 50px rgba(56, 153, 255, 0.1);
       }
 
-      .dashboard-head h1 span {
-        color: rgba(247, 245, 241, 0.3);
+      .headline-copy p {
+        max-width: 680px;
+
+        margin: 20px 0 0;
+
+        color: #aeb9cb;
+
+        font-size: 16px;
+        line-height: 1.7;
       }
 
-      .head-description {
-        max-width: 670px;
-
-        margin: 13px 0 0;
-
-        color: var(--white-muted);
-
-        font-size: 12px;
-
-        line-height: 1.65;
-      }
-
-      /* =========================================================
-           TOTAL
-        ========================================================= */
+      /* --------------------------------------------------
+           TOTAL CARD
+        -------------------------------------------------- */
 
       .total-card {
         position: relative;
 
-        min-width: 285px;
+        padding: 26px;
 
-        padding: 18px 21px;
+        border-radius: var(--radius);
+
+        background: linear-gradient(
+          145deg,
+          rgba(24, 47, 78, 0.78),
+          rgba(6, 13, 25, 0.72)
+        );
+
+        border: 1px solid rgba(115, 181, 255, 0.16);
+
+        box-shadow: var(--shadow);
 
         overflow: hidden;
 
-        border: 1px solid rgba(255, 51, 71, 0.24);
-
-        border-radius: 14px;
-
-        background: linear-gradient(
-          135deg,
-          rgba(91, 13, 23, 0.3),
-          rgba(17, 17, 17, 0.78)
-        );
-
-        box-shadow:
-          0 24px 60px rgba(0, 0, 0, 0.45),
-          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        isolation: isolate;
       }
 
       .total-card::before {
@@ -487,1027 +385,1003 @@
 
         position: absolute;
 
-        width: 210px;
+        width: 230px;
+        height: 230px;
 
-        height: 210px;
-
-        right: -130px;
-
-        top: -140px;
+        top: -100px;
+        right: -70px;
 
         border-radius: 50%;
 
-        background: rgba(255, 38, 58, 0.18);
+        background: rgba(31, 143, 255, 0.24);
 
-        filter: blur(35px);
+        filter: blur(40px);
 
-        animation: totalPulse 4s ease-in-out infinite;
+        z-index: -1;
+
+        animation: cardGlow 7s ease-in-out infinite;
       }
 
-      @keyframes totalPulse {
+      .total-card::after {
+        content: "";
+
+        position: absolute;
+        inset: 0;
+
+        border-radius: inherit;
+
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.07),
+          transparent 30%
+        );
+
+        pointer-events: none;
+      }
+
+      @keyframes cardGlow {
         0%,
         100% {
-          opacity: 0.35;
+          transform: scale(1);
+          opacity: 0.7;
         }
 
         50% {
-          opacity: 0.85;
+          transform: scale(1.25);
+          opacity: 1;
         }
       }
 
       .total-label {
-        position: relative;
+        color: #aab9cc;
 
-        color: rgba(247, 245, 241, 0.39);
+        font-size: 12px;
+        font-weight: 700;
 
-        font-size: 8px;
-
-        letter-spacing: 0.19em;
-
+        letter-spacing: 0.13em;
         text-transform: uppercase;
       }
 
       .total-number {
-        position: relative;
+        margin: 8px 0 2px;
 
-        margin-top: 4px;
+        font-family: "Manrope", sans-serif;
 
-        font-size: clamp(34px, 4vw, 52px);
-
-        font-weight: 700;
+        font-size: clamp(48px, 5vw, 72px);
 
         line-height: 1;
 
-        letter-spacing: -0.065em;
+        font-weight: 800;
 
-        color: var(--white);
+        color: white;
 
-        text-shadow: 0 0 35px rgba(255, 51, 71, 0.14);
+        text-shadow: 0 0 30px rgba(41, 151, 255, 0.35);
       }
 
-      .total-number::first-letter {
-        color: var(--red-bright);
+      .total-sub {
+        color: #758399;
+        font-size: 13px;
       }
 
-      .total-foot {
-        position: relative;
+      .warning-line {
+        margin-top: 22px;
 
-        margin-top: 8px;
+        padding-top: 17px;
 
-        color: rgba(247, 245, 241, 0.28);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
 
-        font-size: 9px;
+        color: #dbe6f4;
+
+        font-size: 13px;
+        line-height: 1.5;
       }
 
-      /* =========================================================
-           DASHBOARD
-        ========================================================= */
+      .warning-line strong {
+        color: var(--red-soft);
+      }
+
+      /* --------------------------------------------------
+           DASHBOARD GRID
+        -------------------------------------------------- */
 
       .dashboard {
         display: grid;
 
-        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-template-columns:
+          minmax(0, 1.3fr)
+          minmax(300px, 0.7fr);
 
-        gap: 16px;
-
-        padding-top: 17px;
+        gap: 18px;
       }
-
-      .span-12 {
-        grid-column: span 12;
-      }
-
-      .span-8 {
-        grid-column: span 8;
-      }
-
-      .span-6 {
-        grid-column: span 6;
-      }
-
-      .span-4 {
-        grid-column: span 4;
-      }
-
-      /* =========================================================
-           PANELS
-        ========================================================= */
 
       .panel {
         position: relative;
 
-        min-width: 0;
+        background: linear-gradient(
+          145deg,
+          rgba(17, 31, 52, 0.76),
+          rgba(5, 10, 19, 0.76)
+        );
 
-        overflow: hidden;
-
-        padding: 20px;
-
-        border: 1px solid var(--line);
+        border: 1px solid var(--border);
 
         border-radius: var(--radius);
 
-        background: linear-gradient(
-          145deg,
-          rgba(28, 28, 28, 0.74),
-          rgba(8, 8, 8, 0.83)
-        );
+        box-shadow: var(--shadow);
 
-        box-shadow:
-          0 30px 80px rgba(0, 0, 0, 0.34),
-          inset 0 1px 0 rgba(255, 255, 255, 0.045);
+        overflow: hidden;
 
-        opacity: 0;
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
 
-        transform: translateY(26px);
-
-        transition:
-          opacity 0.85s ease,
-          transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-          border-color 0.4s ease,
-          box-shadow 0.4s ease;
-      }
-
-      .panel.show {
-        opacity: 1;
-
-        transform: translateY(0);
-      }
-
-      .panel:hover {
-        border-color: rgba(255, 51, 71, 0.2);
-
-        box-shadow:
-          0 35px 90px rgba(0, 0, 0, 0.43),
-          0 0 45px rgba(255, 38, 55, 0.035),
-          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        transform: translateZ(0);
       }
 
       .panel::before {
         content: "";
 
         position: absolute;
-
-        left: 0;
-
-        top: 0;
-
-        width: 100%;
-
-        height: 1px;
+        inset: 0;
 
         background: linear-gradient(
-          90deg,
-          var(--red),
-          rgba(255, 51, 71, 0.14),
-          transparent 75%
+          135deg,
+          rgba(255, 255, 255, 0.055),
+          transparent 24%
         );
-
-        opacity: 0.65;
-      }
-
-      .panel::after {
-        content: "";
-
-        position: absolute;
-
-        width: 240px;
-
-        height: 160px;
-
-        right: -160px;
-
-        top: -110px;
-
-        border-radius: 50%;
-
-        background: rgba(255, 51, 71, 0.06);
-
-        filter: blur(40px);
 
         pointer-events: none;
       }
 
-      /* =========================================================
-           PANEL HEADER
-        ========================================================= */
-
-      .panel-head {
+      .panel-header {
         position: relative;
 
-        z-index: 2;
-
         display: flex;
-
+        align-items: flex-start;
         justify-content: space-between;
 
-        align-items: flex-start;
-
-        gap: 15px;
-
-        margin-bottom: 15px;
+        padding: 22px 24px 10px;
       }
 
       .panel-title {
         margin: 0;
 
-        color: rgba(247, 245, 241, 0.91);
+        font-family: "Manrope", sans-serif;
 
-        font-family: Georgia, "Times New Roman", serif;
-
-        font-size: 16px;
-
-        font-weight: 400;
-
-        line-height: 1.2;
+        font-size: 20px;
+        font-weight: 700;
 
         letter-spacing: -0.02em;
       }
 
       .panel-description {
-        margin: 5px 0 0;
+        margin: 6px 0 0;
 
-        color: var(--white-muted);
+        color: #8390a4;
 
-        font-size: 9px;
-
+        font-size: 12px;
         line-height: 1.5;
       }
 
-      .panel-index {
-        color: rgba(255, 51, 71, 0.65);
+      .panel-tag {
+        padding: 6px 9px;
 
-        font-family: Georgia, serif;
+        border-radius: 100px;
 
-        font-size: 11px;
+        color: #93cfff;
+
+        background: rgba(30, 139, 255, 0.1);
+
+        border: 1px solid rgba(30, 139, 255, 0.15);
+
+        font-size: 10px;
+        font-weight: 700;
 
         letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
-      /* =========================================================
-           CHART
-        ========================================================= */
+      /* --------------------------------------------------
+           CHART AREA
+        -------------------------------------------------- */
 
-      .chart {
+      .chart-wrap {
         position: relative;
 
-        z-index: 2;
+        height: 370px;
 
-        width: 100%;
-
-        height: 285px;
+        padding: 12px 20px 20px;
       }
 
-      .chart.tall {
-        height: 480px;
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
       }
 
-      .chart.medium {
-        height: 340px;
+      /* --------------------------------------------------
+           CATEGORY PANEL
+        -------------------------------------------------- */
+
+      .category-panel {
+        min-height: 410px;
       }
 
-      /* =========================================================
-           DATA REVEAL LINE
-        ========================================================= */
+      .category-list {
+        padding: 10px 24px 24px;
 
-      .data-reveal {
         display: flex;
+        flex-direction: column;
 
+        gap: 14px;
+      }
+
+      .category {
+        position: relative;
+      }
+
+      .category-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+
+        margin-bottom: 7px;
+      }
+
+      .category-name {
+        max-width: 78%;
+
+        color: #dfe7f2;
+
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .category-value {
+        font-family: "Manrope", sans-serif;
+
+        font-size: 14px;
+        font-weight: 800;
+
+        color: white;
+      }
+
+      .bar {
+        height: 6px;
+
+        border-radius: 99px;
+
+        background: rgba(255, 255, 255, 0.055);
+
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+
+        width: 0;
+
+        border-radius: inherit;
+
+        background: linear-gradient(90deg, #0969d8, #36a9ff);
+
+        box-shadow: 0 0 14px rgba(40, 151, 255, 0.55);
+
+        transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .category:nth-child(2) .bar-fill,
+      .category:nth-child(3) .bar-fill {
+        background: linear-gradient(90deg, #a50d2d, #ff3e61);
+
+        box-shadow: 0 0 14px rgba(255, 45, 86, 0.45);
+      }
+
+      /* --------------------------------------------------
+           INSIGHT PANEL
+        -------------------------------------------------- */
+
+      .insight {
+        grid-column: 1 / -1;
+
+        display: grid;
+
+        grid-template-columns:
+          minmax(280px, 0.65fr)
+          minmax(0, 1.35fr);
+
+        min-height: 190px;
+      }
+
+      .insight-number {
+        position: relative;
+
+        display: flex;
         align-items: center;
 
-        gap: 13px;
+        padding: 28px;
 
-        min-height: 68px;
+        background: radial-gradient(
+          circle at 20% 50%,
+          rgba(255, 35, 75, 0.17),
+          transparent 60%
+        );
+      }
 
-        padding: 16px 18px;
+      .insight-number::after {
+        content: "";
 
-        border: 1px solid rgba(255, 51, 71, 0.14);
+        position: absolute;
 
-        border-radius: 14px;
+        right: 0;
+        top: 20%;
+        bottom: 20%;
+
+        width: 1px;
 
         background: linear-gradient(
-          90deg,
-          rgba(255, 51, 71, 0.075),
-          rgba(255, 255, 255, 0.018),
+          transparent,
+          rgba(255, 255, 255, 0.12),
           transparent
         );
       }
 
-      .reveal-line {
-        width: 3px;
+      .big-stat {
+        font-family: "Manrope", sans-serif;
 
-        height: 30px;
+        font-size: clamp(40px, 5vw, 68px);
 
-        flex-shrink: 0;
+        line-height: 1;
 
-        border-radius: 20px;
+        font-weight: 800;
 
-        background: linear-gradient(to bottom, var(--red), var(--orange));
+        color: var(--red-soft);
 
-        box-shadow: 0 0 16px rgba(255, 51, 71, 0.45);
+        text-shadow: 0 0 35px rgba(255, 35, 75, 0.22);
       }
 
-      .data-reveal-text {
-        color: rgba(247, 245, 241, 0.52);
+      .big-stat-label {
+        margin-top: 8px;
 
-        font-size: 10px;
+        color: #8995a8;
 
-        line-height: 1.65;
+        font-size: 12px;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.09em;
       }
 
-      /* =========================================================
-           FOOTER
-        ========================================================= */
+      .insight-copy {
+        padding: 30px;
 
-      footer {
-        margin-top: 34px;
-
-        padding: 18px 3px 0;
-
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
-
-        color: rgba(247, 245, 241, 0.27);
-
-        font-size: 8px;
-
-        line-height: 1.75;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
 
-      footer strong {
-        color: rgba(247, 245, 241, 0.47);
+      .insight-copy h2 {
+        margin: 0;
 
-        font-weight: 600;
+        font-family: "Manrope", sans-serif;
+
+        font-size: clamp(22px, 2.5vw, 32px);
+
+        line-height: 1.15;
+
+        letter-spacing: -0.035em;
       }
 
-      .error-message {
-        display: none;
+      .insight-copy p {
+        max-width: 760px;
 
-        margin-top: 10px;
+        margin: 12px 0 0;
 
-        color: var(--red-bright);
+        color: #8d99ac;
+
+        font-size: 14px;
+        line-height: 1.7;
       }
 
-      .error-message.visible {
-        display: block;
+      /* --------------------------------------------------
+           STATE TABLE
+        -------------------------------------------------- */
+
+      .states {
+        grid-column: 1 / -1;
       }
 
-      /* =========================================================
-           LOADER
-        ========================================================= */
-
-      .loader {
-        position: fixed;
-
-        inset: 0;
-
-        z-index: 100;
+      .state-grid {
+        padding: 10px 24px 24px;
 
         display: grid;
 
-        place-items: center;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
 
-        background: #030303;
-
-        transition:
-          opacity 0.8s ease,
-          visibility 0.8s ease;
+        gap: 10px;
       }
 
-      .loader.hide {
-        opacity: 0;
-
-        visibility: hidden;
-      }
-
-      .loader-inner {
-        width: 210px;
-      }
-
-      .loader-top {
-        display: flex;
-
-        justify-content: space-between;
-
-        margin-bottom: 10px;
-
-        color: rgba(247, 245, 241, 0.35);
-
-        font-size: 8px;
-
-        letter-spacing: 0.18em;
-
-        text-transform: uppercase;
-      }
-
-      .loader-bar {
+      .state {
         position: relative;
 
-        width: 100%;
+        padding: 14px;
 
-        height: 1px;
+        border-radius: 16px;
 
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.045),
+          rgba(255, 255, 255, 0.015)
+        );
+
+        border: 1px solid rgba(255, 255, 255, 0.055);
+
+        transition:
+          transform 0.3s ease,
+          border-color 0.3s ease,
+          background 0.3s ease;
+      }
+
+      .state:hover {
+        transform: translateY(-4px);
+
+        border-color: rgba(48, 157, 255, 0.28);
+
+        background: linear-gradient(
+          145deg,
+          rgba(38, 101, 160, 0.18),
+          rgba(255, 255, 255, 0.025)
+        );
+      }
+
+      .state-name {
+        color: #b5c1d1;
+
+        font-size: 11px;
+
+        white-space: nowrap;
         overflow: hidden;
-
-        background: rgba(255, 255, 255, 0.08);
+        text-overflow: ellipsis;
       }
 
-      .loader-progress {
-        width: 0%;
+      .state-value {
+        margin-top: 4px;
 
-        height: 100%;
+        font-family: "Manrope", sans-serif;
 
-        background: var(--red);
+        font-size: 21px;
+        font-weight: 800;
 
-        box-shadow: 0 0 15px var(--red);
-
-        animation: loading 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        color: white;
       }
 
-      @keyframes loading {
+      /* --------------------------------------------------
+           FOOTER
+        -------------------------------------------------- */
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+
+        margin-top: 18px;
+
+        color: #596579;
+
+        font-size: 11px;
+
+        letter-spacing: 0.03em;
+      }
+
+      /* --------------------------------------------------
+           ANIMATIONS
+        -------------------------------------------------- */
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+
+        animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .delay-1 {
+        animation-delay: 0.08s;
+      }
+
+      .delay-2 {
+        animation-delay: 0.16s;
+      }
+
+      .delay-3 {
+        animation-delay: 0.24s;
+      }
+
+      @keyframes reveal {
         to {
-          width: 100%;
+          opacity: 1;
+          transform: translateY(0);
         }
       }
 
-      /* =========================================================
+      .floating {
+        animation: floating 7s ease-in-out infinite;
+      }
+
+      @keyframes floating {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+
+      /* --------------------------------------------------
            RESPONSIVE
-        ========================================================= */
+        -------------------------------------------------- */
 
-      @media (max-width: 1100px) {
-        .span-8 {
-          grid-column: span 12;
-        }
-
-        .span-4 {
-          grid-column: span 6;
-        }
-
-        .span-6 {
-          grid-column: span 6;
-        }
-      }
-
-      @media (max-width: 760px) {
-        .app {
-          width: calc(100% - 22px);
-
-          padding-top: 12px;
-        }
-
-        .top {
-          margin-bottom: 8px;
-        }
-
-        .edition {
-          display: none;
-        }
-
-        .dashboard-head {
+      @media (max-width: 1000px) {
+        .headline {
           grid-template-columns: 1fr;
-
-          gap: 18px;
-        }
-
-        .total-card {
-          min-width: 0;
-
-          width: 100%;
         }
 
         .dashboard {
           grid-template-columns: 1fr;
         }
 
-        .span-12,
-        .span-8,
-        .span-6,
-        .span-4 {
-          grid-column: 1;
-        }
-
-        .panel {
-          padding: 17px;
-
-          border-radius: 16px;
-        }
-
-        .chart {
-          height: 300px;
-        }
-
-        .chart.tall {
-          height: 500px;
-        }
-
-        .chart.medium {
-          height: 370px;
+        .state-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
 
-      @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-          animation-duration: 0.01ms !important;
+      @media (max-width: 700px) {
+        .page {
+          width: min(94vw, 600px);
 
-          animation-iteration-count: 1 !important;
+          padding-top: 18px;
+        }
 
-          transition-duration: 0.01ms !important;
+        .topbar {
+          margin-bottom: 15px;
+        }
+
+        h1 {
+          font-size: clamp(39px, 13vw, 60px);
+        }
+
+        .headline-copy p {
+          font-size: 14px;
+        }
+
+        .chart-wrap {
+          height: 320px;
+
+          padding: 8px 12px 15px;
+        }
+
+        .insight {
+          grid-template-columns: 1fr;
+        }
+
+        .insight-number::after {
+          display: none;
+        }
+
+        .state-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+
+          padding-left: 15px;
+          padding-right: 15px;
+        }
+
+        footer {
+          flex-direction: column;
+          gap: 5px;
         }
       }
     </style>
   </head>
 
   <body>
-    <!-- =========================================================
-         ATMOSPHERE
-    ========================================================== -->
-
-    <div class="scene">
-      <div class="light light-red"></div>
-
-      <div class="light light-orange"></div>
-
-      <div class="light light-blue"></div>
+    <div class="atmosphere">
+      <div class="orb blue"></div>
+      <div class="orb red"></div>
+      <div class="orb gold"></div>
+      <div class="light-beam"></div>
+      <div class="grain"></div>
     </div>
 
-    <div class="grain"></div>
-
-    <!-- =========================================================
-         LOADER
-    ========================================================== -->
-
-    <div class="loader" id="loader">
-      <div class="loader-inner">
-        <div class="loader-top">
-          <span> NCRB · 2023 </span>
-
-          <span> DATA </span>
-        </div>
-
-        <div class="loader-bar">
-          <div class="loader-progress"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- =========================================================
-         APPLICATION
-    ========================================================== -->
-
-    <main class="app">
-      <!-- =====================================================
-             TOP
-        ====================================================== -->
-
-      <header class="top">
+    <main class="page">
+      <!-- TOP -->
+      <header class="topbar reveal">
         <div class="brand">
-          <span class="brand-line"></span>
-
-          <span class="brand-name"> National Crime Records Bureau </span>
+          <span class="brand-dot"></span>
+          National Crime Records Bureau
         </div>
 
-        <div class="edition">Crime in India · 2023</div>
+        <div class="year">Crime in India · 2023</div>
       </header>
 
-      <!-- =====================================================
-             DASHBOARD HEADER
-        ====================================================== -->
-
-      <section class="dashboard-head">
-        <div>
-          <p class="eyebrow">India · 2023 · Reported Cases</p>
+      <!-- HEADLINE -->
+      <section class="headline">
+        <div class="headline-copy reveal">
+          <div class="eyebrow">India · 2023 · Reported Cases</div>
 
           <h1>
-            Reported rape cases
-            <span>across India.</span>
+            The numbers<br />
+            deserve attention.
           </h1>
 
-          <p class="head-description">
-            State-wise distribution and recorded circumstances from the official
-            NCRB 2023 dataset.
+          <p>
+            A visual exploration of rape cases registered across India and the
+            circumstances recorded within the official NCRB dataset.
           </p>
         </div>
 
-        <div class="total-card">
-          <div class="total-label">Total reported cases</div>
+        <div class="total-card floating reveal delay-1">
+          <div class="total-label">Reported rape cases</div>
 
           <div class="total-number" id="totalCases">—</div>
 
-          <div class="total-foot">NCRB · Table 3A.11 · 2023</div>
+          <div class="total-sub">Across all States & UTs · 2023</div>
+
+          <div class="warning-line">
+            <strong>These are registered cases.</strong>
+            The dataset describes what was reported to authorities — not the
+            full extent of the crime.
+          </div>
         </div>
       </section>
 
-      <!-- =====================================================
-             DASHBOARD
-        ====================================================== -->
-
+      <!-- DASHBOARD -->
       <section class="dashboard">
-        <!-- =================================================
-                 STATES
-            ================================================== -->
-
-        <article class="panel span-8">
-          <div class="panel-head">
+        <!-- STATE CHART -->
+        <article class="panel reveal delay-2">
+          <div class="panel-header">
             <div>
-              <h2 class="panel-title">States / Union Territories</h2>
+              <h2 class="panel-title">Where cases were registered</h2>
 
-              <p class="panel-description">Highest reported case counts</p>
+              <p class="panel-description">
+                States and Union Territories with the highest recorded case
+                counts.
+              </p>
             </div>
 
-            <span class="panel-index"> 01 </span>
+            <div class="panel-tag">State / UT</div>
           </div>
 
-          <div class="chart tall">
+          <div class="chart-wrap">
             <canvas id="stateChart"></canvas>
           </div>
         </article>
 
-        <!-- =================================================
-                 CIRCUMSTANCES
-            ================================================== -->
-
-        <article class="panel span-4">
-          <div class="panel-head">
+        <!-- CATEGORIES -->
+        <article class="panel category-panel reveal delay-3">
+          <div class="panel-header">
             <div>
-              <h2 class="panel-title">Recorded circumstances</h2>
-
-              <p class="panel-description">Selected statutory categories</p>
-            </div>
-
-            <span class="panel-index"> 02 </span>
-          </div>
-
-          <div class="chart medium">
-            <canvas id="circumstancesChart"></canvas>
-          </div>
-        </article>
-
-        <!-- =================================================
-                 CUSTODIAL
-            ================================================== -->
-
-        <article class="panel span-6">
-          <div class="panel-head">
-            <div>
-              <h2 class="panel-title">Custodial circumstances</h2>
-
-              <p class="panel-description">Recorded under Section 376(2)</p>
-            </div>
-
-            <span class="panel-index"> 03 </span>
-          </div>
-
-          <div class="chart">
-            <canvas id="custodialChart"></canvas>
-          </div>
-        </article>
-
-        <!-- =================================================
-                 TRUST
-            ================================================== -->
-
-        <article class="panel span-6">
-          <div class="panel-head">
-            <div>
-              <h2 class="panel-title">Trust & authority</h2>
+              <h2 class="panel-title">Circumstances</h2>
 
               <p class="panel-description">
-                Recorded relationships and positions
+                Categories recorded in the NCRB table.
               </p>
             </div>
 
-            <span class="panel-index"> 04 </span>
+            <div class="panel-tag">2023</div>
           </div>
 
-          <div class="chart">
-            <canvas id="trustChart"></canvas>
+          <div class="category-list" id="categoryList">
+            <!-- JS -->
           </div>
         </article>
 
-        <!-- =================================================
-                 AGE
-            ================================================== -->
-
-        <article class="panel span-6">
-          <div class="panel-head">
+        <!-- INSIGHT -->
+        <article class="panel insight reveal">
+          <div class="insight-number">
             <div>
-              <h2 class="panel-title">Age-related categories</h2>
+              <div class="big-stat" id="gangRape">—</div>
 
-              <p class="panel-description">Statutory age classifications</p>
+              <div class="big-stat-label">Gang rape cases</div>
+            </div>
+          </div>
+
+          <div class="insight-copy">
+            <h2>Behind every number is a person.</h2>
+
+            <p>
+              Statistics can make violence feel distant. This dashboard keeps
+              the human reality behind the numbers in view while presenting the
+              circumstances recorded by the NCRB.
+            </p>
+          </div>
+        </article>
+
+        <!-- STATES -->
+        <article class="panel states reveal">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">State-by-state view</h2>
+
+              <p class="panel-description">
+                Recorded cases in 2023, ranked highest first.
+              </p>
             </div>
 
-            <span class="panel-index"> 05 </span>
+            <div class="panel-tag">NCRB</div>
           </div>
 
-          <div class="chart">
-            <canvas id="ageChart"></canvas>
-          </div>
-        </article>
-
-        <!-- =================================================
-                 OTHER
-            ================================================== -->
-
-        <article class="panel span-6">
-          <div class="panel-head">
-            <div>
-              <h2 class="panel-title">Additional circumstances</h2>
-
-              <p class="panel-description">Other recorded classifications</p>
-            </div>
-
-            <span class="panel-index"> 06 </span>
-          </div>
-
-          <div class="chart">
-            <canvas id="otherChart"></canvas>
+          <div class="state-grid" id="stateGrid">
+            <!-- JS -->
           </div>
         </article>
-
-        <!-- =================================================
-                 DATA NOTE
-            ================================================== -->
-
-        <div class="data-reveal span-12">
-          <span class="reveal-line"></span>
-
-          <span class="data-reveal-text">
-            Categories in the NCRB table can overlap. They describe recorded
-            statutory circumstances and should not be added together as though
-            they were mutually exclusive groups.
-          </span>
-        </div>
       </section>
 
-      <!-- =====================================================
-             FOOTER
-        ====================================================== -->
-
       <footer>
-        <strong> Source: </strong>
+        <span>
+          Source: National Crime Records Bureau · Crime in India 2023
+        </span>
 
-        National Crime Records Bureau, Crime in India 2023, Table 3A.11.
-
-        <br />
-
-        Dataset: NCRB_CII_2023_Table_3A.11_0.csv
-
-        <br />
-
-        Figures represent cases registered in the supplied NCRB dataset.
-        State/UT comparisons should be interpreted in the context of reporting,
-        population, and other underlying factors.
-
-        <div id="error" class="error-message"></div>
+        <span> Data visualisation · Reported cases </span>
       </footer>
     </main>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
-      /* =========================================================
-           CONFIG
-        ========================================================= */
+      /*
+    ============================================================
+    NCRB CRIME DASHBOARD
+    ============================================================
+
+    CSV FILE REQUIRED:
+
+    NCRB_CII_2023_Table_3A.11_0.csv
+
+    Keep it in the SAME folder as this HTML file.
+
+    Run with VS Code Live Server.
+    ============================================================
+    */
 
       const CSV_FILE = "NCRB_CII_2023_Table_3A.11_0.csv";
 
-      let charts = [];
+      let rows = [];
 
-      /* =========================================================
-           CSV PARSER
-        ========================================================= */
-
-      function parseCSVLine(line) {
-        const result = [];
-
-        let current = "";
-
-        let quoted = false;
-
-        for (let i = 0; i < line.length; i++) {
-          const char = line[i];
-
-          if (char === '"') {
-            if (quoted && line[i + 1] === '"') {
-              current += '"';
-
-              i++;
-            } else {
-              quoted = !quoted;
-            }
-          } else if (char === "," && !quoted) {
-            result.push(current);
-
-            current = "";
-          } else {
-            current += char;
-          }
-        }
-
-        result.push(current);
-
-        return result.map((value) =>
-          value
-            .replace(/^\uFEFF/, "")
-            .replace(/\*\*/g, "")
-            .replace(/^"|"$/g, "")
-            .trim(),
-        );
-      }
+      /*
+    ------------------------------------------------------------
+    CSV PARSER
+    ------------------------------------------------------------
+    */
 
       function parseCSV(text) {
-        const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
+        const result = [];
 
-        const headers = parseCSVLine(lines[0]);
+        let row = [];
+        let cell = "";
+        let insideQuotes = false;
 
-        const rows = [];
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
 
-        for (let i = 1; i < lines.length; i++) {
-          const values = parseCSVLine(lines[i]);
+          if (char === '"') {
+            if (insideQuotes && text[i + 1] === '"') {
+              cell += '"';
+              i++;
+            } else {
+              insideQuotes = !insideQuotes;
+            }
+          } else if (char === "," && !insideQuotes) {
+            row.push(cell.trim());
+            cell = "";
+          } else if ((char === "\n" || char === "\r") && !insideQuotes) {
+            if (char === "\r" && text[i + 1] === "\n") {
+              i++;
+            }
 
-          const row = {};
+            row.push(cell.trim());
 
-          headers.forEach((header, index) => {
-            row[header] = values[index] || "";
-          });
+            if (row.some((value) => value !== "")) {
+              result.push(row);
+            }
 
-          rows.push(row);
-        }
-
-        return {
-          headers,
-          rows,
-        };
-      }
-
-      /* =========================================================
-           NUMBER HELPERS
-        ========================================================= */
-
-      function number(value) {
-        if (value === undefined || value === null) {
-          return 0;
-        }
-
-        const parsed = Number(
-          String(value).replace(/,/g, "").replace(/\*/g, "").trim(),
-        );
-
-        return Number.isFinite(parsed) ? parsed : 0;
-      }
-
-      function format(value) {
-        return Math.round(value).toLocaleString("en-IN");
-      }
-
-      /* =========================================================
-           HEADER SEARCH
-        ========================================================= */
-
-      function findHeader(headers, words) {
-        return headers.find((header) => {
-          const text = header.toLowerCase().replace(/\*\*/g, "");
-
-          return words.every((word) => text.includes(word.toLowerCase()));
-        });
-      }
-
-      function findAnyHeader(headers, options) {
-        for (const words of options) {
-          const found = findHeader(headers, words);
-
-          if (found) {
-            return found;
+            row = [];
+            cell = "";
+          } else {
+            cell += char;
           }
         }
 
-        return null;
-      }
+        if (cell || row.length) {
+          row.push(cell.trim());
 
-      /* =========================================================
-           SUM
-        ========================================================= */
-
-      function sum(rows, column) {
-        if (!column) {
-          return 0;
-        }
-
-        return rows.reduce((total, row) => total + number(row[column]), 0);
-      }
-
-      /* =========================================================
-           SORT
-        ========================================================= */
-
-      function sorted(data, limit = null) {
-        let result = data
-          .filter((item) => item.value > 0)
-          .sort((a, b) => b.value - a.value);
-
-        if (limit) {
-          result = result.slice(0, limit);
+          result.push(row);
         }
 
         return result;
       }
 
-      /* =========================================================
-           CHART GRADIENT
-        ========================================================= */
+      /*
+    ------------------------------------------------------------
+    NUMBER CLEANER
+    ------------------------------------------------------------
+    */
 
-      function createGradient(chart) {
-        const ctx = chart.ctx;
+      function number(value) {
+        if (!value) return 0;
 
-        const gradient = ctx.createLinearGradient(0, 0, chart.width, 0);
-
-        gradient.addColorStop(0, "rgba(124,14,25,.78)");
-
-        gradient.addColorStop(0.35, "rgba(213,27,45,.90)");
-
-        gradient.addColorStop(0.72, "rgba(255,61,76,.96)");
-
-        gradient.addColorStop(1, "rgba(255,142,55,.98)");
-
-        return gradient;
+        return (
+          Number(
+            String(value)
+              .replace(/\*/g, "")
+              .replace(/,/g, "")
+              .replace(/\s/g, ""),
+          ) || 0
+        );
       }
 
-      /* =========================================================
-           CHART PLUGIN
-        ========================================================= */
+      /*
+    ------------------------------------------------------------
+    ANIMATED NUMBER
+    ------------------------------------------------------------
+    */
 
-      const cinematicPlugin = {
-        id: "cinematicBars",
+      function animateNumber(element, target, duration = 1300) {
+        const start = performance.now();
 
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
+        function update(now) {
+          const progress = Math.min((now - start) / duration, 1);
 
-          const meta = chart.getDatasetMeta(0);
+          const eased = 1 - Math.pow(1 - progress, 4);
 
-          const dataset = chart.data.datasets[0];
+          const value = Math.round(target * eased);
 
-          ctx.save();
+          element.textContent = value.toLocaleString("en-IN");
 
-          meta.data.forEach((bar, index) => {
-            const value = dataset.data[index];
-
-            if (!value) {
-              return;
-            }
-
-            const x = bar.x + 9;
-
-            const y = bar.y;
-
-            ctx.font = "600 10px Inter, system-ui, sans-serif";
-
-            ctx.fillStyle = "rgba(255,245,240,.84)";
-
-            ctx.textAlign = "left";
-
-            ctx.textBaseline = "middle";
-
-            ctx.shadowColor = "rgba(255,51,71,.25)";
-
-            ctx.shadowBlur = 8;
-
-            ctx.fillText(format(value), x, y);
-          });
-
-          ctx.restore();
-        },
-      };
-
-      /* =========================================================
-           CHART CREATOR
-        ========================================================= */
-
-      function makeChart(id, data) {
-        const canvas = document.getElementById(id);
-
-        if (!canvas || !data.length) {
-          return;
+          if (progress < 1) {
+            requestAnimationFrame(update);
+          }
         }
 
-        const chart = new Chart(canvas, {
+        requestAnimationFrame(update);
+      }
+
+      /*
+    ------------------------------------------------------------
+    LOAD CSV
+    ------------------------------------------------------------
+    */
+
+      async function loadData() {
+        try {
+          const response = await fetch(CSV_FILE);
+
+          if (!response.ok) {
+            throw new Error("CSV file could not be loaded.");
+          }
+
+          const text = await response.text();
+
+          const parsed = parseCSV(text);
+
+          const headers = parsed[0];
+
+          rows = parsed
+            .slice(1)
+            .map((row) => {
+              const object = {};
+
+              headers.forEach((header, index) => {
+                object[header] = row[index] || "";
+              });
+
+              return object;
+            })
+            .filter((row) => row["State/UT"]);
+
+          buildDashboard(headers, rows);
+        } catch (error) {
+          console.error(error);
+
+          document.getElementById("totalCases").textContent = "CSV?";
+
+          alert(
+            "Could not load the CSV.\n\n" +
+              "Use VS Code Live Server and keep the CSV in the same folder as index.html.",
+          );
+        }
+      }
+
+      /*
+    ------------------------------------------------------------
+    FIND COLUMN
+    ------------------------------------------------------------
+    */
+
+      function findColumn(headers, search) {
+        return headers.find((header) =>
+          header.toLowerCase().includes(search.toLowerCase()),
+        );
+      }
+
+      /*
+    ------------------------------------------------------------
+    BUILD DASHBOARD
+    ------------------------------------------------------------
+    */
+
+      function buildDashboard(headers, data) {
+        /*
+        TOTAL CASES
+        */
+
+        const totalColumn = findColumn(headers, "Rape (Total)");
+
+        const gangColumn = findColumn(headers, "Gang Rape (Sec.376(D))");
+
+        const total = data.reduce(
+          (sum, row) => sum + number(row[totalColumn]),
+          0,
+        );
+
+        const gang = data.reduce(
+          (sum, row) => sum + number(row[gangColumn]),
+          0,
+        );
+
+        animateNumber(document.getElementById("totalCases"), total);
+
+        animateNumber(document.getElementById("gangRape"), gang);
+
+        /*
+        STATE DATA
+        */
+
+        const stateData = data
+          .map((row) => ({
+            name: row["State/UT"],
+
+            value: number(row[totalColumn]),
+          }))
+          .sort((a, b) => b.value - a.value);
+
+        createStateChart(stateData);
+
+        createStateCards(stateData);
+
+        createCategories(headers, data);
+      }
+
+      /*
+    ------------------------------------------------------------
+    STATE CHART
+    ------------------------------------------------------------
+    */
+
+      function createStateChart(stateData) {
+        const top = stateData.slice(0, 10);
+
+        const ctx = document.getElementById("stateChart");
+
+        new Chart(ctx, {
           type: "bar",
 
           data: {
-            labels: data.map((item) => item.label),
+            labels: top.map((item) => item.name),
 
             datasets: [
               {
-                data: data.map((item) => item.value),
+                data: top.map((item) => item.value),
 
-                backgroundColor: (context) => createGradient(context.chart),
-
-                borderWidth: 0,
-
-                borderRadius: 3,
+                borderRadius: 7,
 
                 borderSkipped: false,
 
-                barPercentage: 0.64,
+                backgroundColor: top.map((_, index) =>
+                  index === 0 ? "#ff3158" : "#208cff",
+                ),
 
-                categoryPercentage: 0.76,
+                hoverBackgroundColor: "#65bdff",
+
+                barThickness: 22,
               },
             ],
           },
@@ -1520,27 +1394,11 @@
             maintainAspectRatio: false,
 
             animation: {
-              duration: 1450,
+              duration: 1700,
 
               easing: "easeOutQuart",
 
-              delay: (context) => context.dataIndex * 75,
-            },
-
-            transitions: {
-              active: {
-                animation: {
-                  duration: 350,
-                },
-              },
-            },
-
-            interaction: {
-              mode: "nearest",
-
-              axis: "y",
-
-              intersect: false,
+              delay: (context) => context.dataIndex * 80,
             },
 
             plugins: {
@@ -1549,24 +1407,23 @@
               },
 
               tooltip: {
-                displayColors: false,
+                backgroundColor: "rgba(4,10,20,.94)",
 
-                backgroundColor: "rgba(5,5,5,.96)",
+                titleColor: "#fff",
 
-                borderColor: "rgba(255,51,71,.38)",
+                bodyColor: "#b8c7da",
+
+                borderColor: "rgba(70,160,255,.3)",
 
                 borderWidth: 1,
 
-                titleColor: "#f7f5f1",
-
-                bodyColor: "rgba(247,245,241,.68)",
-
                 padding: 12,
 
-                cornerRadius: 7,
+                displayColors: false,
 
                 callbacks: {
-                  label: (context) => "  " + format(context.raw) + " cases",
+                  label: (context) =>
+                    context.raw.toLocaleString("en-IN") + " registered cases",
                 },
               },
             },
@@ -1577,26 +1434,16 @@
 
                 grid: {
                   color: "rgba(255,255,255,.055)",
-
-                  drawTicks: false,
-                },
-
-                border: {
-                  display: false,
                 },
 
                 ticks: {
-                  color: "rgba(247,245,241,.42)",
-
-                  padding: 7,
-
-                  maxTicksLimit: 5,
+                  color: "#8491a5",
 
                   font: {
-                    size: 9,
+                    size: 11,
                   },
 
-                  callback: (value) => format(value),
+                  callback: (value) => Number(value).toLocaleString("en-IN"),
                 },
               },
 
@@ -1605,329 +1452,172 @@
                   display: false,
                 },
 
-                border: {
-                  display: false,
-                },
-
                 ticks: {
-                  color: "rgba(247,245,241,.76)",
-
-                  padding: 9,
+                  color: "#dce5f1",
 
                   font: {
-                    size: window.innerWidth < 600 ? 9 : 10,
+                    size: 12,
 
-                    weight: "500",
+                    weight: "600",
                   },
                 },
               },
             },
+          },
+        });
+      }
 
-            layout: {
-              padding: {
-                top: 4,
+      /*
+    ------------------------------------------------------------
+    CATEGORY DATA
+    ------------------------------------------------------------
+    */
 
-                right: 20,
+      function createCategories(headers, data) {
+        const categories = [
+          {
+            search: "Rape in Custody (Total)",
 
-                bottom: 4,
-
-                left: 0,
-              },
-            },
+            name: "Rape in custody",
           },
 
-          plugins: [cinematicPlugin],
+          {
+            search: "By Relative/ Guardian / Teacher",
+
+            name: "Relative / guardian / teacher / person in trust",
+          },
+
+          {
+            search: "On Women Below 16",
+
+            name: "Women below 16 years",
+          },
+
+          {
+            search: "By Persons in Control",
+
+            name: "Persons in control or dominance",
+          },
+
+          {
+            search: "On Pregnant Women",
+
+            name: "Pregnant women",
+          },
+
+          {
+            search: "Repeated Rape",
+
+            name: "Repeated rape on same woman",
+          },
+
+          {
+            search: "Gang Rape",
+
+            name: "Gang rape",
+          },
+        ];
+
+        const container = document.getElementById("categoryList");
+
+        container.innerHTML = "";
+
+        const values = categories.map((category) => {
+          const column = findColumn(headers, category.search);
+
+          const value = column
+            ? data.reduce((sum, row) => sum + number(row[column]), 0)
+            : 0;
+
+          return {
+            ...category,
+            value,
+          };
         });
 
-        charts.push(chart);
-      }
+        const max = Math.max(...values.map((item) => item.value));
 
-      /* =========================================================
-           NUMBER ANIMATION
-        ========================================================= */
+        values.forEach((item, index) => {
+          const element = document.createElement("div");
 
-      function animateNumber(element, target) {
-        const duration = 1700;
+          element.className = "category";
 
-        const startTime = performance.now();
+          const percentage = max ? (item.value / max) * 100 : 0;
 
-        function frame(now) {
-          const progress = Math.min((now - startTime) / duration, 1);
+          element.innerHTML = `
 
-          const eased = 1 - Math.pow(1 - progress, 4);
+                    <div class="category-top">
 
-          element.textContent = format(target * eased);
+                        <div class="category-name">
+                            ${item.name}
+                        </div>
 
-          if (progress < 1) {
-            requestAnimationFrame(frame);
-          }
-        }
+                        <div class="category-value">
+                            ${item.value.toLocaleString("en-IN")}
+                        </div>
 
-        requestAnimationFrame(frame);
-      }
+                    </div>
 
-      /* =========================================================
-           BUILD DASHBOARD
-        ========================================================= */
+                    <div class="bar">
 
-      function build(headers, rows) {
-        const stateColumn = findAnyHeader(headers, [["state/ut"], ["state"]]);
+                        <div
+                            class="bar-fill"
+                            data-width="${percentage}"
+                        ></div>
 
-        const totalColumn = findAnyHeader(headers, [
-          ["rape", "total", "col. 29"],
-          ["rape", "total"],
-        ]);
+                    </div>
+                `;
 
-        if (!stateColumn || !totalColumn) {
-          throw new Error(
-            "Required State/UT or Rape Total column was not found.",
+          container.appendChild(element);
+
+          setTimeout(
+            () => {
+              element.querySelector(".bar-fill").style.width = percentage + "%";
+            },
+            250 + index * 100,
           );
-        }
-
-        /* =====================================================
-               NATIONAL TOTAL
-            ====================================================== */
-
-        const nationalTotal = sum(rows, totalColumn);
-
-        animateNumber(document.getElementById("totalCases"), nationalTotal);
-
-        /* =====================================================
-               STATES
-            ====================================================== */
-
-        const states = rows.map((row) => ({
-          label: row[stateColumn],
-
-          value: number(row[totalColumn]),
-        }));
-
-        makeChart("stateChart", sorted(states, 16));
-
-        /* =====================================================
-               CIRCUMSTANCES
-            ====================================================== */
-
-        const circumstances = [
-          ["Custodial rape", ["custody", "total"]],
-
-          [
-            "Relative / guardian / teacher",
-            ["relative", "guardian", "teacher"],
-          ],
-
-          ["Pregnant women", ["pregnant"]],
-
-          ["Women below 16", ["women", "below 16"]],
-
-          ["Unable to give consent", ["incapable", "consent"]],
-
-          ["Control / dominance", ["control", "dominance"]],
-
-          ["Disability", ["mental", "physical", "disability"]],
-
-          ["Endanger life", ["endanger", "life"]],
-
-          ["Repeated rape", ["repeated", "rape"]],
-
-          ["Gang rape", ["gang rape"]],
-
-          ["Repeat offenders", ["repeat offenders"]],
-        ];
-
-        makeChart(
-          "circumstancesChart",
-          sorted(
-            circumstances.map((item) => ({
-              label: item[0],
-
-              value: sum(rows, findHeader(headers, item[1])),
-            })),
-            7,
-          ),
-        );
-
-        /* =====================================================
-               CUSTODIAL
-            ====================================================== */
-
-        const custodial = [
-          ["Police personnel", ["police personnel"]],
-
-          ["Public servant", ["public servant"]],
-
-          ["Armed forces", ["armed forces"]],
-
-          ["Jail / remand staff", ["jail", "remand"]],
-
-          ["Hospital staff", ["hospital"]],
-        ];
-
-        makeChart(
-          "custodialChart",
-          sorted(
-            custodial.map((item) => ({
-              label: item[0],
-
-              value: sum(rows, findHeader(headers, item[1])),
-            })),
-          ),
-        );
-
-        /* =====================================================
-               TRUST
-            ====================================================== */
-
-        const trust = [
-          [
-            "Relative / guardian / teacher",
-            ["relative", "guardian", "teacher"],
-          ],
-
-          ["Person in authority", ["person in authority"]],
-
-          ["Control / dominance", ["control", "dominance"]],
-
-          ["Separated husband", ["separated husband"]],
-        ];
-
-        makeChart(
-          "trustChart",
-          sorted(
-            trust.map((item) => ({
-              label: item[0],
-
-              value: sum(rows, findHeader(headers, item[1])),
-            })),
-          ),
-        );
-
-        /* =====================================================
-               AGE
-            ====================================================== */
-
-        const age = [
-          ["Women below 16", ["women", "below 16"]],
-
-          ["Girl below 12", ["girl below 12"]],
-
-          ["Rape / gang rape below 16", ["gang rape", "girl below 16"]],
-
-          ["Rape / gang rape below 12", ["gang rape", "girl below 12"]],
-        ];
-
-        makeChart(
-          "ageChart",
-          sorted(
-            age.map((item) => ({
-              label: item[0],
-
-              value: sum(rows, findHeader(headers, item[1])),
-            })),
-          ),
-        );
-
-        /* =====================================================
-               OTHER
-            ====================================================== */
-
-        const other = [
-          ["Pregnant women", ["pregnant"]],
-
-          ["Unable to give consent", ["incapable", "consent"]],
-
-          [
-            "Mental / physical disability",
-            ["mental", "physical", "disability"],
-          ],
-
-          ["Repeated rape", ["repeated", "rape"]],
-
-          ["Endanger life", ["endanger", "life"]],
-
-          ["Repeat offenders", ["repeat offenders"]],
-        ];
-
-        makeChart(
-          "otherChart",
-          sorted(
-            other.map((item) => ({
-              label: item[0],
-
-              value: sum(rows, findHeader(headers, item[1])),
-            })),
-          ),
-        );
+        });
       }
 
-      /* =========================================================
-           PANEL REVEAL
-        ========================================================= */
+      /*
+    ------------------------------------------------------------
+    STATE CARDS
+    ------------------------------------------------------------
+    */
 
-      function revealPanels() {
-        const panels = document.querySelectorAll(".panel");
+      function createStateCards(stateData) {
+        const container = document.getElementById("stateGrid");
 
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                const delay = Array.from(panels).indexOf(entry.target) * 80;
+        container.innerHTML = "";
 
-                setTimeout(() => {
-                  entry.target.classList.add("show");
-                }, delay);
+        stateData.slice(0, 16).forEach((state) => {
+          const card = document.createElement("div");
 
-                observer.unobserve(entry.target);
-              }
-            });
-          },
-          {
-            threshold: 0.08,
-          },
-        );
+          card.className = "state";
 
-        panels.forEach((panel) => observer.observe(panel));
+          card.innerHTML = `
+
+                        <div class="state-name">
+                            ${state.name}
+                        </div>
+
+                        <div class="state-value">
+                            ${state.value.toLocaleString("en-IN")}
+                        </div>
+
+                    `;
+
+          container.appendChild(card);
+        });
       }
 
-      /* =========================================================
-           LOAD CSV
-        ========================================================= */
+      /*
+    ------------------------------------------------------------
+    START
+    ------------------------------------------------------------
+    */
 
-      async function load() {
-        try {
-          const response = await fetch(CSV_FILE);
-
-          if (!response.ok) {
-            throw new Error("Could not load CSV. HTTP " + response.status);
-          }
-
-          const text = await response.text();
-
-          const data = parseCSV(text);
-
-          build(data.headers, data.rows);
-
-          revealPanels();
-
-          setTimeout(() => {
-            document.getElementById("loader").classList.add("hide");
-          }, 650);
-        } catch (error) {
-          console.error(error);
-
-          document.getElementById("loader").classList.add("hide");
-
-          const errorElement = document.getElementById("error");
-
-          errorElement.classList.add("visible");
-
-          errorElement.textContent =
-            error.message +
-            " Make sure the CSV is in the same folder as index.html and run the page using Live Server.";
-        }
-      }
-
-      load();
+      loadData();
     </script>
   </body>
 </html>
