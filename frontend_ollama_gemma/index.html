@@ -1,1357 +1,4241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#212121">
+<title>Local AI — Ollama</title>
 
-    <title>Local AI</title>
+<style>
+/* =========================================================
+   LOCAL AI — CHATGPT STYLE
+========================================================= */
 
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+:root{
+    --bg:#212121;
+    --bg-deep:#171717;
+    --sidebar:#171717;
+    --sidebar-hover:#2a2a2a;
 
-      :root {
-        --bg: #f5f4ef;
-        --surface: rgba(255, 255, 255, 0.62);
-        --surface-solid: #ffffff;
-        --surface-soft: rgba(255, 255, 255, 0.45);
+    --surface:#2f2f2f;
+    --surface-2:#303030;
+    --surface-3:#3a3a3a;
 
-        --text: #34343a;
-        --muted: #92929a;
+    --border:#3b3b3b;
+    --border-soft:#303030;
 
-        --border: rgba(70, 70, 80, 0.1);
+    --text:#ececec;
+    --text-2:#b7b7b7;
+    --text-3:#858585;
 
-        --purple: #8f82c8;
-        --purple-soft: #eeeaf9;
+    --accent:#10a37f;
+    --accent-hover:#0d8f70;
 
-        --user: #e8e3f5;
-        --assistant: rgba(255, 255, 255, 0.78);
+    --danger:#ef6b73;
 
-        --shadow: 0 12px 40px rgba(80, 70, 90, 0.08);
-      }
+    --sidebar-width:260px;
 
-      /* =========================
-   BODY
-========================= */
+    --radius:14px;
+    --ease:cubic-bezier(.2,.75,.25,1);
+}
 
-      body {
-        min-height: 100vh;
+*,
+*::before,
+*::after{
+    box-sizing:border-box;
+}
 
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
+html,
+body{
+    width:100%;
+    height:100%;
+    margin:0;
+}
 
-        color: var(--text);
+body{
+    font-family:
+        Inter,
+        ui-sans-serif,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
 
-        background:
-          radial-gradient(
-            circle at 15% 10%,
-            rgba(206, 195, 237, 0.45),
-            transparent 30%
-          ),
-          radial-gradient(
-            circle at 85% 15%,
-            rgba(202, 224, 226, 0.45),
-            transparent 30%
-          ),
-          radial-gradient(
-            circle at 50% 100%,
-            rgba(235, 220, 197, 0.35),
-            transparent 35%
-          ),
-          var(--bg);
+    background:var(--bg);
+    color:var(--text);
 
-        overflow: hidden;
-      }
+    overflow:hidden;
+}
 
-      /* =========================
+/* =========================================================
    APP
-========================= */
+========================================================= */
 
-      .app {
-        height: 100vh;
+.app{
+    width:100%;
+    height:100vh;
 
-        display: grid;
+    display:flex;
 
-        grid-template-columns:
-          250px
-          minmax(0, 1fr)
-          250px;
+    background:var(--bg);
+}
 
-        transition: grid-template-columns 0.3s ease;
-      }
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
-      /* =========================
-   COLLAPSED STATES
-========================= */
+.sidebar{
+    width:var(--sidebar-width);
+    min-width:var(--sidebar-width);
 
-      .app.left-collapsed {
-        grid-template-columns:
-          70px
-          minmax(0, 1fr)
-          250px;
-      }
+    height:100%;
 
-      .app.right-collapsed {
-        grid-template-columns:
-          250px
-          minmax(0, 1fr)
-          70px;
-      }
+    display:flex;
+    flex-direction:column;
 
-      .app.left-collapsed.right-collapsed {
-        grid-template-columns:
-          70px
-          minmax(0, 1fr)
-          70px;
-      }
+    background:var(--sidebar);
 
-      /* =========================
-   PANELS
-========================= */
+    border-right:1px solid #292929;
 
-      .sidebar,
-      .settings {
-        background: rgba(255, 255, 255, 0.42);
+    transition:
+        transform .3s var(--ease),
+        width .3s var(--ease),
+        min-width .3s var(--ease);
+}
 
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+.sidebar-top{
+    padding:12px;
+}
 
-        border-color: var(--border);
+.brand{
+    height:44px;
 
-        transition:
-          padding 0.3s ease,
-          opacity 0.25s ease;
-      }
+    display:flex;
+    align-items:center;
 
-      /* =========================
-   LEFT SIDEBAR
-========================= */
+    gap:10px;
 
-      .sidebar {
-        border-right: 1px solid var(--border);
+    padding:0 10px;
 
-        padding: 22px;
+    color:var(--text);
 
-        display: flex;
+    font-size:15px;
+    font-weight:600;
+}
 
-        flex-direction: column;
+.brand-icon{
+    width:28px;
+    height:28px;
 
-        overflow: hidden;
-      }
+    display:grid;
+    place-items:center;
 
-      .left-collapsed .sidebar {
-        padding: 18px 12px;
-      }
+    border-radius:8px;
 
-      /* =========================
-   LOGO
-========================= */
-
-      .logo {
-        display: flex;
-
-        align-items: center;
-
-        gap: 11px;
-
-        margin-bottom: 32px;
-
-        white-space: nowrap;
-      }
-
-      .logo-icon {
-        width: 38px;
-        height: 38px;
-
-        min-width: 38px;
-
-        border-radius: 14px;
-
-        display: grid;
-
-        place-items: center;
-
-        background: linear-gradient(135deg, #aaa0d8, #9ac7c5);
-
-        color: white;
-
-        box-shadow: 0 8px 25px rgba(130, 120, 170, 0.2);
-      }
-
-      .logo h1 {
-        font-size: 15px;
-
-        font-weight: 600;
-      }
-
-      .logo span {
-        display: block;
-
-        margin-top: 3px;
-
-        color: var(--muted);
-
-        font-size: 10px;
-      }
-
-      /* =========================
-   COLLAPSE BUTTON
-========================= */
-
-      .collapse-btn {
-        position: absolute;
-
-        width: 30px;
-        height: 30px;
-
-        border-radius: 50%;
-
-        border: 1px solid var(--border);
-
-        background: rgba(255, 255, 255, 0.8);
-
-        color: var(--muted);
-
-        cursor: pointer;
-
-        display: grid;
-
-        place-items: center;
-
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-
-        z-index: 10;
-      }
-
-      .left-toggle {
-        left: 235px;
-
-        top: 22px;
-      }
-
-      .right-toggle {
-        right: 235px;
-
-        top: 22px;
-      }
-
-      /* =========================
-   COLLAPSED CONTENT
-========================= */
-
-      .left-collapsed .logo h1,
-      .left-collapsed .logo span,
-      .left-collapsed .new-chat span,
-      .left-collapsed .section-title,
-      .left-collapsed .status-text {
-        display: none;
-      }
-
-      .left-collapsed .logo {
-        justify-content: center;
-      }
-
-      .left-collapsed .new-chat {
-        justify-content: center;
-      }
-
-      .left-collapsed .status {
-        justify-content: center;
-      }
-
-      /* =========================
-   BUTTONS
-========================= */
-
-      .new-chat {
-        width: 100%;
-
-        border: 1px solid var(--border);
-
-        background: rgba(255, 255, 255, 0.55);
-
-        color: var(--text);
-
-        padding: 11px 13px;
-
-        border-radius: 12px;
-
-        cursor: pointer;
-
-        text-align: left;
-
-        transition: 0.2s;
-
-        margin-bottom: 30px;
-
-        display: flex;
-
-        align-items: center;
-
-        gap: 8px;
-
-        white-space: nowrap;
-      }
-
-      .new-chat:hover {
-        background: white;
-
-        box-shadow: var(--shadow);
-      }
-
-      /* =========================
-   SECTION TITLE
-========================= */
-
-      .section-title {
-        color: var(--muted);
-
-        font-size: 10px;
-
-        text-transform: uppercase;
-
-        letter-spacing: 1.4px;
-
-        margin-bottom: 12px;
-      }
-
-      /* =========================
-   STATUS
-========================= */
-
-      .status {
-        padding: 12px;
-
-        border: 1px solid var(--border);
-
-        border-radius: 13px;
-
-        background: rgba(255, 255, 255, 0.35);
-      }
-
-      .status-row {
-        display: flex;
-
-        align-items: center;
-
-        gap: 8px;
-
-        font-size: 12px;
-      }
-
-      .dot {
-        width: 7px;
-        height: 7px;
-
-        background: #79b89b;
-
-        border-radius: 50%;
-
-        box-shadow: 0 0 10px rgba(121, 184, 155, 0.6);
-      }
-
-      .status small {
-        display: block;
-
-        color: var(--muted);
-
-        margin-top: 7px;
-
-        font-size: 10px;
-      }
-
-      /* =========================
-   MAIN
-========================= */
-
-      .main {
-        min-width: 0;
-
-        display: flex;
-
-        flex-direction: column;
-
-        position: relative;
-      }
-
-      /* =========================
-   TOP BAR
-========================= */
-
-      .topbar {
-        height: 68px;
-
-        border-bottom: 1px solid var(--border);
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: space-between;
-
-        padding: 0 28px;
-
-        background: rgba(255, 255, 255, 0.3);
-
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-      }
-
-      .model-info {
-        display: flex;
-
-        align-items: center;
-
-        gap: 10px;
-      }
-
-      .model-badge {
-        padding: 5px 9px;
-
-        border-radius: 7px;
-
-        background: var(--purple-soft);
-
-        color: #8176b2;
-
-        font-size: 9px;
-
-        letter-spacing: 0.8px;
-
-        font-weight: 600;
-      }
-
-      .model-name {
-        font-size: 13px;
-
-        font-weight: 600;
-      }
-
-      .model-sub {
-        color: var(--muted);
-
-        font-size: 10px;
-
-        margin-top: 2px;
-      }
-
-      /* =========================
-   CHAT
-========================= */
-
-      .chat {
-        flex: 1;
-
-        overflow-y: auto;
-
-        padding: 40px 7% 30px;
-
-        scroll-behavior: smooth;
-      }
-
-      /* =========================
-   WELCOME
-========================= */
-
-      .welcome {
-        max-width: 650px;
-
-        margin: 12vh auto 0;
-
-        text-align: center;
-      }
-
-      .welcome-orb {
-        width: 72px;
-        height: 72px;
-
-        margin: 0 auto 23px;
-
-        border-radius: 24px;
-
-        background:
-          radial-gradient(circle at 30% 25%, #e0d9f5, transparent 28%),
-          linear-gradient(135deg, #a69bd0, #a8c9c5);
-
-        box-shadow: 0 15px 40px rgba(130, 120, 170, 0.18);
-
-        animation: float 5s ease-in-out infinite;
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-
-        50% {
-          transform: translateY(-7px);
-        }
-      }
-
-      .welcome h2 {
-        font-size: 30px;
-
-        font-weight: 500;
-
-        letter-spacing: -1px;
-
-        margin-bottom: 9px;
-      }
-
-      .welcome p {
-        color: var(--muted);
-
-        font-size: 13px;
-
-        line-height: 1.7;
-      }
-
-      /* =========================
-   SUGGESTIONS
-========================= */
-
-      .suggestions {
-        display: grid;
-
-        grid-template-columns: repeat(2, 1fr);
-
-        gap: 10px;
-
-        margin-top: 28px;
-      }
-
-      .suggestion {
-        text-align: left;
-
-        padding: 14px;
-
-        border-radius: 14px;
-
-        border: 1px solid var(--border);
-
-        background: rgba(255, 255, 255, 0.45);
-
-        color: var(--text);
-
-        cursor: pointer;
-
-        transition: 0.2s;
-      }
-
-      .suggestion:hover {
-        transform: translateY(-2px);
-
-        background: rgba(255, 255, 255, 0.8);
-
-        box-shadow: var(--shadow);
-      }
-
-      .suggestion strong {
-        display: block;
-
-        font-size: 11px;
-
-        margin-bottom: 4px;
-      }
-
-      .suggestion span {
-        color: var(--muted);
-
-        font-size: 10px;
-      }
-
-      /* =========================
-   MESSAGES
-========================= */
-
-      .message {
-        max-width: 850px;
-
-        margin: 0 auto 25px;
-
-        display: flex;
-
-        gap: 10px;
-
-        animation: appear 0.25s ease;
-      }
-
-      @keyframes appear {
-        from {
-          opacity: 0;
-          transform: translateY(5px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* USER = RIGHT */
-
-      .message.user {
-        justify-content: flex-end;
-      }
-
-      /* AI = LEFT */
-
-      .message.ai {
-        justify-content: flex-start;
-      }
-
-      /* =========================
-   AVATAR
-========================= */
-
-      .avatar {
-        width: 29px;
-        height: 29px;
-
-        min-width: 29px;
-
-        border-radius: 10px;
-
-        display: grid;
-
-        place-items: center;
-
-        font-size: 8px;
-
-        font-weight: 700;
-      }
-
-      .message.user .avatar {
-        order: 2;
-
-        background: #ded8ef;
-
-        color: #766ca0;
-      }
-
-      .message.ai .avatar {
-        background: linear-gradient(135deg, #aaa0d5, #9fc3c1);
-
-        color: white;
-      }
-
-      /* =========================
-   BUBBLE
-========================= */
-
-      .bubble {
-        max-width: 70%;
-
-        padding: 12px 15px;
-
-        border-radius: 16px;
-
-        font-size: 13px;
-
-        line-height: 1.65;
-
-        white-space: pre-wrap;
-      }
-
-      .message.user .bubble {
-        background: var(--user);
-
-        border-bottom-right-radius: 5px;
-      }
-
-      .message.ai .bubble {
-        background: var(--assistant);
-
-        border: 1px solid var(--border);
-
-        border-bottom-left-radius: 5px;
-
-        box-shadow: 0 5px 20px rgba(80, 70, 90, 0.035);
-      }
-
-      /* =========================
-   COMPOSER
-========================= */
-
-      .composer-area {
-        padding: 12px 7% 25px;
-
-        background: linear-gradient(transparent, rgba(245, 244, 239, 0.85) 35%);
-      }
-
-      .composer {
-        max-width: 850px;
-
-        margin: 0 auto;
-
-        border: 1px solid var(--border);
-
-        background: rgba(255, 255, 255, 0.72);
-
-        border-radius: 18px;
-
-        padding: 9px;
-
-        display: flex;
-
-        align-items: flex-end;
-
-        gap: 8px;
-
-        box-shadow: 0 10px 35px rgba(80, 70, 90, 0.07);
-
-        transition: 0.2s;
-      }
-
-      .composer:focus-within {
-        border-color: rgba(143, 130, 200, 0.35);
-
-        box-shadow:
-          0 0 0 3px rgba(143, 130, 200, 0.06),
-          0 12px 40px rgba(80, 70, 90, 0.08);
-      }
-
-      textarea {
-        flex: 1;
-
-        resize: none;
-
-        max-height: 150px;
-
-        border: none;
-
-        outline: none;
-
-        background: transparent;
-
-        color: var(--text);
-
-        padding: 9px;
-
-        font: inherit;
-
-        font-size: 13px;
-
-        line-height: 1.5;
-      }
-
-      textarea::placeholder {
-        color: #aaa9b0;
-      }
-
-      .send {
-        width: 39px;
-        height: 39px;
-
-        border: none;
-
-        border-radius: 12px;
-
-        background: linear-gradient(135deg, #aaa0d2, #91bcb9);
-
-        color: white;
-
-        cursor: pointer;
-
-        font-size: 17px;
-
-        transition: 0.2s;
-      }
-
-      .send:hover {
-        transform: translateY(-1px);
-
-        box-shadow: 0 6px 20px rgba(130, 120, 170, 0.25);
-      }
-
-      .send:disabled {
-        opacity: 0.45;
-
-        cursor: not-allowed;
-      }
-
-      .hint {
-        max-width: 850px;
-
-        margin: 8px auto 0;
-
-        color: #aaa8ae;
-
-        font-size: 9px;
-
-        text-align: center;
-      }
-
-      /* =========================
-   RIGHT SETTINGS
-========================= */
-
-      .settings {
-        border-left: 1px solid var(--border);
-
-        padding: 24px 20px;
-
-        overflow: hidden;
-      }
-
-      .right-collapsed .settings {
-        padding: 24px 10px;
-      }
-
-      .right-collapsed .settings > *:not(.right-toggle) {
-        opacity: 0;
-
-        pointer-events: none;
-      }
-
-      .setting {
-        margin-bottom: 25px;
-      }
-
-      .setting-header {
-        display: flex;
-
-        justify-content: space-between;
-
-        margin-bottom: 9px;
-      }
-
-      .setting label {
-        font-size: 11px;
-      }
-
-      .value {
-        color: #8176b2;
-
-        font-size: 10px;
-      }
-
-      select {
-        width: 100%;
-
-        background: rgba(255, 255, 255, 0.65);
-
-        color: var(--text);
-
-        border: 1px solid var(--border);
-
-        border-radius: 10px;
-
-        padding: 9px;
-
-        outline: none;
-      }
-
-      input[type="range"] {
-        width: 100%;
-
-        accent-color: var(--purple);
-      }
-
-      .danger {
-        width: 100%;
-
-        border: 1px solid rgba(190, 100, 100, 0.15);
-
-        background: rgba(190, 100, 100, 0.05);
-
-        color: #b97878;
-
-        border-radius: 10px;
-
-        padding: 9px;
-
-        cursor: pointer;
-      }
-
-      /* =========================
-   RESPONSIVE
-========================= */
-
-      @media (max-width: 1000px) {
-        .app {
-          grid-template-columns:
-            210px
-            minmax(0, 1fr);
-        }
-
-        .settings {
-          display: none;
-        }
-
-        .right-toggle {
-          display: none;
-        }
-      }
-
-      @media (max-width: 700px) {
-        body {
-          overflow: auto;
-        }
-
-        .app {
-          display: block;
-
-          height: 100vh;
-        }
-
-        .sidebar {
-          display: none;
-        }
-
-        .chat {
-          padding: 25px 15px 20px;
-        }
-
-        .composer-area {
-          padding: 10px 15px 18px;
-        }
-
-        .welcome h2 {
-          font-size: 25px;
-        }
-
-        .suggestions {
-          grid-template-columns: 1fr;
-        }
-
-        .bubble {
-          max-width: 82%;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="app" id="app">
-      <!-- ================= LEFT ================= -->
-
-      <aside class="sidebar">
-        <div class="logo">
-          <div class="logo-icon">✦</div>
-
-          <div>
-            <h1>Local AI</h1>
-
-            <span> quiet little assistant </span>
-          </div>
-        </div>
-
-        <button class="new-chat" onclick="clearChat()">
-          ＋
-
-          <span> New conversation </span>
-        </button>
-
-        <div class="section-title">Connection</div>
-
-        <div class="status">
-          <div class="status-row">
-            <span class="dot"></span>
-
-            <span class="status-text"> Ollama connected </span>
-          </div>
-
-          <small class="status-text"> localhost:11434 </small>
-        </div>
-      </aside>
-
-      <!-- LEFT COLLAPSE -->
-
-      <button
-        class="collapse-btn left-toggle"
-        onclick="toggleLeft()"
-        title="Collapse left panel"
-      >
-        ‹
-      </button>
-
-      <!-- ================= MAIN ================= -->
-
-      <main class="main">
-        <header class="topbar">
-          <div class="model-info">
-            <div class="model-badge">LOCAL</div>
-
-            <div>
-              <div class="model-name">Gemma 3 · 1B</div>
-
-              <div class="model-sub">running quietly on your machine</div>
-            </div>
-          </div>
-        </header>
-
-        <!-- CHAT -->
-
-        <section class="chat" id="chat">
-          <div class="welcome" id="welcome">
-            <div class="welcome-orb"></div>
-
-            <h2>Take your time.</h2>
-
-            <p>A small local AI for curious thoughts, experiments and ideas.</p>
-
-            <div class="suggestions">
-              <button
-                class="suggestion"
-                onclick="
-                  useSuggestion('Explain how HTTP works in simple terms.')
-                "
-              >
-                <strong> 🌿 Learn something </strong>
-
-                <span> Explain HTTP simply </span>
-              </button>
-
-              <button
-                class="suggestion"
-                onclick="
-                  useSuggestion(
-                    'Give me a creative project idea using HTML, CSS and JavaScript.',
-                  )
-                "
-              >
-                <strong> ✨ Get inspired </strong>
-
-                <span> Find a creative project </span>
-              </button>
-
-              <button
-                class="suggestion"
-                onclick="
-                  useSuggestion(
-                    'Explain recursion using a simple real-life analogy.',
-                  )
-                "
-              >
-                <strong> ☁ Understand </strong>
-
-                <span> Make something easier </span>
-              </button>
-
-              <button
-                class="suggestion"
-                onclick="
-                  useSuggestion(
-                    'Write a short peaceful motivational quote for a programmer.',
-                  )
-                "
-              >
-                <strong> 🌙 Create </strong>
-
-                <span> Make something calm </span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- COMPOSER -->
-
-        <div class="composer-area">
-          <div class="composer">
-            <textarea
-              id="input"
-              rows="1"
-              placeholder="Write something..."
-              aria-label="Message"
-              oninput="autoResize(this)"
-              onkeydown="handleKey(event)"
-            >
-            </textarea>
-
-            <button
-              class="send"
-              id="sendButton"
-              onclick="sendMessage()"
-              title="Send message"
-            >
-              ↑
-            </button>
-          </div>
-
-          <div class="hint">Enter to send · Shift + Enter for a new line</div>
-        </div>
-      </main>
-
-      <!-- ================= RIGHT ================= -->
-
-      <aside class="settings">
-        <div class="section-title">Quiet controls</div>
-
-        <div class="setting">
-          <div class="setting-header">
-            <label for="model"> Model </label>
-          </div>
-
-          <select id="model" aria-label="Select AI model">
-            <option value="gemma3:1b">Gemma 3 · 1B</option>
-
-            <option value="qwen2.5:7b">Qwen 2.5 · 7B</option>
-
-            <option value="qwen2.5-coder:7b">Qwen Coder · 7B</option>
-          </select>
-        </div>
-
-        <div class="setting">
-          <div class="setting-header">
-            <label for="temperature"> Creativity </label>
-
-            <span class="value" id="tempValue"> 0.7 </span>
-          </div>
-
-          <input
-            id="temperature"
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
-            value="0.7"
-            aria-label="Creativity temperature"
-            oninput="updateTemperature()"
-          />
-        </div>
-
-        <button class="danger" onclick="clearChat()">Clear conversation</button>
-      </aside>
-
-      <!-- RIGHT COLLAPSE -->
-
-      <button
-        class="collapse-btn right-toggle"
-        onclick="toggleRight()"
-        title="Collapse settings"
-      >
-        ›
-      </button>
-    </div>
-
-    <script>
-      /* =========================
-   OLLAMA
-========================= */
-
-      const OLLAMA_URL = "http://localhost:11434/api/chat";
-
-      /* =========================
-   STATE
-========================= */
-
-      let messages = [];
-
-      const app = document.getElementById("app");
-
-      const input = document.getElementById("input");
-
-      const chat = document.getElementById("chat");
-
-      const sendButton = document.getElementById("sendButton");
-
-      /* =========================
-   PANELS
-========================= */
-
-      function toggleLeft() {
-        app.classList.toggle("left-collapsed");
-      }
-
-      function toggleRight() {
-        app.classList.toggle("right-collapsed");
-      }
-
-      /* =========================
-   INPUT
-========================= */
-
-      function autoResize(element) {
-        element.style.height = "auto";
-
-        element.style.height = Math.min(element.scrollHeight, 150) + "px";
-      }
-
-      function handleKey(event) {
-        if (event.key === "Enter" && !event.shiftKey) {
-          event.preventDefault();
-
-          sendMessage();
-        }
-      }
-
-      function useSuggestion(text) {
-        input.value = text;
-
-        autoResize(input);
-
-        input.focus();
-      }
-
-      /* =========================
-   TEMPERATURE
-========================= */
-
-      function updateTemperature() {
-        const value = document.getElementById("temperature").value;
-
-        document.getElementById("tempValue").textContent = value;
-      }
-
-      /* =========================
-   ADD MESSAGE
-========================= */
-
-      function addMessage(role, content) {
-        const wrapper = document.createElement("div");
-
-        wrapper.className = `message ${role === "user" ? "user" : "ai"}`;
-
-        const avatar = document.createElement("div");
-
-        avatar.className = "avatar";
-
-        avatar.textContent = role === "user" ? "YOU" : "AI";
-
-        const bubble = document.createElement("div");
-
-        bubble.className = "bubble";
-
-        bubble.textContent = content;
-
-        wrapper.appendChild(avatar);
-
-        wrapper.appendChild(bubble);
-
-        chat.appendChild(wrapper);
-
-        chat.scrollTop = chat.scrollHeight;
-
-        return bubble;
-      }
-
-      /* =========================
-   SEND
-========================= */
-
-      async function sendMessage() {
-        const text = input.value.trim();
-
-        if (!text) return;
-
-        const model = document.getElementById("model").value;
-
-        const temperature = Number(
-          document.getElementById("temperature").value,
+    background:
+        linear-gradient(
+            135deg,
+            #10a37f,
+            #0b8065
         );
 
-        /* USER MESSAGE */
+    color:white;
+}
 
-        addMessage("user", text);
+.brand-icon svg{
+    width:17px;
+    height:17px;
+}
 
-        messages.push({
-          role: "user",
+.new-chat{
+    width:100%;
+    height:46px;
 
-          content: text,
-        });
+    display:flex;
+    align-items:center;
 
-        input.value = "";
+    gap:10px;
 
-        autoResize(input);
+    padding:0 13px;
 
-        sendButton.disabled = true;
+    border:1px solid #373737;
+    border-radius:10px;
 
-        /* AI MESSAGE */
+    background:transparent;
 
-        const aiBubble = addMessage("assistant", "Thinking...");
+    color:var(--text);
 
-        try {
-          const response = await fetch(OLLAMA_URL, {
-            method: "POST",
+    font:inherit;
+    font-size:14px;
 
-            headers: {
-              "Content-Type": "application/json",
-            },
+    cursor:pointer;
 
-            body: JSON.stringify({
-              model: model,
+    transition:
+        background .18s ease,
+        border-color .18s ease;
+}
 
-              messages: messages,
+.new-chat:hover{
+    background:var(--sidebar-hover);
+    border-color:#454545;
+}
 
-              stream: false,
+.new-chat svg{
+    width:18px;
+    height:18px;
+}
 
-              options: {
-                temperature: temperature,
-              },
-            }),
-          });
+/* =========================================================
+   CHAT HISTORY
+========================================================= */
 
-          if (!response.ok) {
-            throw new Error(`Ollama returned HTTP ${response.status}`);
-          }
+.history{
+    flex:1;
 
-          const data = await response.json();
+    min-height:0;
 
-          const answer = data.message?.content || "No response received.";
+    overflow-y:auto;
 
-          aiBubble.textContent = answer;
+    padding:5px 9px 15px;
+}
 
-          messages.push({
-            role: "assistant",
+.history-label{
+    padding:12px 10px 7px;
 
-            content: answer,
-          });
+    color:var(--text-3);
 
-          chat.scrollTop = chat.scrollHeight;
-        } catch (error) {
-          aiBubble.textContent =
-            "I couldn't reach Ollama.\n\n" +
-            "Make sure Ollama is running.\n\n" +
-            "Error: " +
-            error.message;
-        } finally {
-          sendButton.disabled = false;
+    font-size:11px;
+    font-weight:600;
 
-          input.focus();
-        }
-      }
+    text-transform:uppercase;
+    letter-spacing:.06em;
+}
 
-      /* =========================
-   CLEAR
-========================= */
+.history-item{
+    width:100%;
 
-      function clearChat() {
-        messages = [];
+    min-height:40px;
 
-        chat.innerHTML = `
+    display:flex;
+    align-items:center;
 
-        <div
-            class="welcome"
-            id="welcome">
+    padding:9px 10px;
 
-            <div class="welcome-orb"></div>
+    border:0;
+    border-radius:8px;
 
-            <h2>
-                Take your time.
-            </h2>
+    background:transparent;
 
-            <p>
-                A small local AI for curious thoughts,
-                experiments and ideas.
-            </p>
+    color:#c9c9c9;
+
+    font:inherit;
+    font-size:13px;
+
+    text-align:left;
+
+    cursor:pointer;
+
+    overflow:hidden;
+
+    transition:background .15s ease;
+}
+
+.history-item:hover{
+    background:var(--sidebar-hover);
+}
+
+.history-item.active{
+    background:#2a2a2a;
+    color:white;
+}
+
+.history-item span{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+/* =========================================================
+   SIDEBAR BOTTOM
+========================================================= */
+
+.sidebar-bottom{
+    padding:10px;
+
+    border-top:1px solid #292929;
+}
+
+.connection{
+    min-height:46px;
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    padding:0 10px;
+
+    border-radius:9px;
+
+    color:var(--text-2);
+
+    font-size:12px;
+}
+
+.connection-dot{
+    width:8px;
+    height:8px;
+
+    border-radius:50%;
+
+    background:#777;
+
+    box-shadow:0 0 0 3px rgba(255,255,255,.03);
+}
+
+.connection.online .connection-dot{
+    background:#10a37f;
+    box-shadow:
+        0 0 0 3px rgba(16,163,127,.13),
+        0 0 10px rgba(16,163,127,.28);
+}
+
+.connection.offline .connection-dot{
+    background:#e16a6a;
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.main{
+    flex:1;
+    min-width:0;
+
+    height:100%;
+
+    display:flex;
+    flex-direction:column;
+
+    background:var(--bg);
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.header{
+    height:58px;
+    min-height:58px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 18px;
+
+    border-bottom:1px solid #2b2b2b;
+
+    background:rgba(33,33,33,.92);
+
+    backdrop-filter:blur(14px);
+
+    z-index:5;
+}
+
+.header-left{
+    display:flex;
+    align-items:center;
+
+    min-width:0;
+}
+
+.mobile-menu{
+    display:none;
+
+    width:36px;
+    height:36px;
+
+    margin-right:8px;
+
+    border:0;
+    border-radius:8px;
+
+    background:transparent;
+
+    color:var(--text);
+
+    cursor:pointer;
+}
+
+.mobile-menu:hover{
+    background:#303030;
+}
+
+.model-button{
+    display:flex;
+    align-items:center;
+
+    gap:9px;
+
+    min-width:0;
+
+    padding:7px 9px;
+
+    border:0;
+    border-radius:8px;
+
+    background:transparent;
+
+    color:var(--text);
+
+    font:inherit;
+
+    cursor:pointer;
+}
+
+.model-button:hover{
+    background:#2b2b2b;
+}
+
+.model-name{
+    max-width:270px;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+
+    font-size:14px;
+    font-weight:600;
+}
+
+.model-chevron{
+    color:#888;
+
+    font-size:11px;
+}
+
+.model-dot{
+    width:7px;
+    height:7px;
+
+    flex:none;
+
+    border-radius:50%;
+
+    background:#10a37f;
+
+    box-shadow:0 0 9px rgba(16,163,127,.5);
+}
+
+.header-actions{
+    display:flex;
+    align-items:center;
+
+    gap:5px;
+}
+
+.icon-btn{
+    width:36px;
+    height:36px;
+
+    display:grid;
+    place-items:center;
+
+    border:0;
+    border-radius:8px;
+
+    background:transparent;
+
+    color:#aaa;
+
+    cursor:pointer;
+}
+
+.icon-btn:hover{
+    background:#303030;
+    color:white;
+}
+
+.icon-btn svg{
+    width:18px;
+    height:18px;
+}
+
+/* =========================================================
+   CHAT AREA
+========================================================= */
+
+.chat{
+    flex:1;
+
+    min-height:0;
+
+    overflow-y:auto;
+
+    scroll-behavior:smooth;
+}
+
+.chat-inner{
+    width:100%;
+}
+
+.welcome{
+    width:min(900px,calc(100% - 40px));
+
+    min-height:calc(100vh - 210px);
+
+    margin:auto;
+
+    padding:90px 20px 120px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+
+    text-align:center;
+}
+
+.welcome-mark{
+    width:54px;
+    height:54px;
+
+    display:grid;
+    place-items:center;
+
+    margin-bottom:28px;
+
+    border:1px solid #414141;
+    border-radius:16px;
+
+    background:#292929;
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,.25);
+}
+
+.welcome-mark svg{
+    width:29px;
+    height:29px;
+
+    color:#ddd;
+}
+
+.welcome h1{
+    margin:0;
+
+    font-size:clamp(30px,4vw,42px);
+
+    line-height:1.1;
+
+    font-weight:600;
+
+    letter-spacing:-.035em;
+}
+
+.welcome p{
+    max-width:610px;
+
+    margin:16px 0 0;
+
+    color:var(--text-2);
+
+    font-size:15px;
+
+    line-height:1.65;
+}
+
+/* =========================================================
+   SUGGESTIONS
+========================================================= */
+
+.suggestions{
+    width:min(780px,100%);
+
+    margin-top:45px;
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:10px;
+}
+
+.suggestion{
+    min-height:88px;
+
+    padding:16px;
+
+    border:1px solid #3b3b3b;
+    border-radius:12px;
+
+    background:#292929;
+
+    color:var(--text);
+
+    text-align:left;
+
+    cursor:pointer;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .18s var(--ease);
+}
+
+.suggestion:hover{
+    background:#303030;
+    border-color:#4b4b4b;
+
+    transform:translateY(-1px);
+}
+
+.suggestion-title{
+    font-size:13px;
+    font-weight:600;
+}
+
+.suggestion-text{
+    margin-top:7px;
+
+    color:#8f8f8f;
+
+    font-size:12px;
+    line-height:1.4;
+}
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.messages{
+    padding:25px 0 150px;
+}
+
+.message{
+    width:100%;
+
+    display:flex;
+
+    padding:18px max(20px,calc((100% - 900px)/2));
+
+    animation:messageIn .22s ease;
+}
+
+@keyframes messageIn{
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+
+    to{
+        opacity:1;
+        transform:none;
+    }
+}
+
+.message.user{
+    background:transparent;
+}
+
+.message.assistant{
+    background:#2f2f2f;
+    border-top:1px solid rgba(255,255,255,.025);
+    border-bottom:1px solid rgba(0,0,0,.08);
+}
+
+.message-row{
+    width:100%;
+
+    display:flex;
+
+    gap:16px;
+
+    min-width:0;
+}
+
+.message-avatar{
+    width:30px;
+    height:30px;
+
+    min-width:30px;
+
+    display:grid;
+    place-items:center;
+
+    margin-top:1px;
+
+    border-radius:7px;
+
+    background:#10a37f;
+
+    color:white;
+}
+
+.message.user .message-avatar{
+    background:#555;
+}
+
+.message-avatar svg{
+    width:17px;
+    height:17px;
+}
+
+.message-body{
+    min-width:0;
+
+    flex:1;
+}
+
+.message-role{
+    margin-bottom:5px;
+
+    font-size:13px;
+    font-weight:600;
+
+    color:#f0f0f0;
+}
+
+.message-text{
+    max-width:760px;
+
+    color:#ececec;
+
+    font-size:15px;
+
+    line-height:1.7;
+
+    overflow-wrap:anywhere;
+}
+
+.message.user .message-text{
+    color:#eee;
+}
+
+.message-text p{
+    margin:0 0 14px;
+}
+
+.message-text p:last-child{
+    margin-bottom:0;
+}
+
+.message-text h1,
+.message-text h2,
+.message-text h3{
+    margin:20px 0 9px;
+
+    line-height:1.3;
+}
+
+.message-text h1{
+    font-size:24px;
+}
+
+.message-text h2{
+    font-size:20px;
+}
+
+.message-text h3{
+    font-size:17px;
+}
+
+.message-text ul,
+.message-text ol{
+    margin:8px 0 15px;
+
+    padding-left:24px;
+}
+
+.message-text li{
+    margin:5px 0;
+}
+
+.message-text strong{
+    font-weight:650;
+}
+
+.inline-code{
+    padding:2px 5px;
+
+    border-radius:5px;
+
+    background:#1d1d1d;
+
+    color:#e6e6e6;
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+
+    font-size:.88em;
+}
+
+.code-wrap{
+    margin:15px 0;
+
+    border:1px solid #454545;
+    border-radius:10px;
+
+    overflow:hidden;
+
+    background:#181818;
+}
+
+.code-header{
+    height:35px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 10px;
+
+    border-bottom:1px solid #303030;
+
+    color:#888;
+
+    font-size:11px;
+}
+
+.copy-code{
+    border:0;
+    border-radius:6px;
+
+    padding:4px 7px;
+
+    background:#292929;
+
+    color:#aaa;
+
+    font-size:11px;
+
+    cursor:pointer;
+}
+
+.copy-code:hover{
+    background:#383838;
+    color:white;
+}
+
+.code-wrap pre{
+    margin:0;
+
+    padding:15px;
+
+    overflow-x:auto;
+
+    color:#e6e6e6;
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+
+    font-size:13px;
+
+    line-height:1.6;
+}
+
+.code-wrap code{
+    font-family:inherit;
+}
+
+.message-actions{
+    display:flex;
+
+    gap:3px;
+
+    margin-top:9px;
+}
+
+.message-action{
+    width:30px;
+    height:28px;
+
+    display:grid;
+    place-items:center;
+
+    border:0;
+    border-radius:7px;
+
+    background:transparent;
+
+    color:#777;
+
+    cursor:pointer;
+}
+
+.message-action:hover{
+    background:#3a3a3a;
+    color:#ccc;
+}
+
+/* =========================================================
+   TYPING
+========================================================= */
+
+.typing{
+    display:flex;
+    align-items:center;
+
+    gap:4px;
+
+    height:25px;
+}
+
+.typing span{
+    width:6px;
+    height:6px;
+
+    border-radius:50%;
+
+    background:#aaa;
+
+    animation:typing 1.2s infinite ease-in-out;
+}
+
+.typing span:nth-child(2){
+    animation-delay:.15s;
+}
+
+.typing span:nth-child(3){
+    animation-delay:.3s;
+}
+
+@keyframes typing{
+    0%,60%,100%{
+        transform:translateY(0);
+        opacity:.35;
+    }
+
+    30%{
+        transform:translateY(-4px);
+        opacity:1;
+    }
+}
+
+/* =========================================================
+   COMPOSER
+========================================================= */
+
+.composer-area{
+    position:relative;
+
+    padding:
+        12px
+        max(16px,calc((100% - 940px)/2))
+        14px;
+
+    background:
+        linear-gradient(
+            to top,
+            var(--bg) 70%,
+            rgba(33,33,33,0)
+        );
+}
+
+.composer{
+    position:relative;
+
+    display:flex;
+    align-items:flex-end;
+
+    min-height:58px;
+
+    padding:8px 8px 8px 16px;
+
+    border:1px solid #4a4a4a;
+    border-radius:16px;
+
+    background:#2f2f2f;
+
+    box-shadow:
+        0 6px 25px rgba(0,0,0,.20);
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease;
+}
+
+.composer:focus-within{
+    border-color:#666;
+
+    box-shadow:
+        0 7px 30px rgba(0,0,0,.28);
+}
+
+textarea{
+    flex:1;
+
+    min-width:0;
+
+    height:40px;
+    max-height:180px;
+
+    padding:9px 0;
+
+    resize:none;
+
+    border:0;
+    outline:0;
+
+    background:transparent;
+
+    color:#eee;
+
+    font:inherit;
+    font-size:15px;
+
+    line-height:1.5;
+}
+
+textarea::placeholder{
+    color:#777;
+}
+
+.send-button{
+    width:40px;
+    height:40px;
+
+    min-width:40px;
+
+    display:grid;
+    place-items:center;
+
+    border:0;
+    border-radius:10px;
+
+    background:#ececec;
+
+    color:#171717;
+
+    cursor:pointer;
+
+    transition:
+        transform .15s ease,
+        background .15s ease,
+        opacity .15s ease;
+}
+
+.send-button:hover{
+    background:white;
+
+    transform:translateY(-1px);
+}
+
+.send-button.stop{
+    background:#ef6b73;
+    color:white;
+}
+
+.send-button:disabled{
+    opacity:.4;
+    cursor:default;
+    transform:none;
+}
+
+.composer-bottom{
+    display:flex;
+    justify-content:space-between;
+
+    margin-top:7px;
+
+    padding:0 4px;
+
+    color:#666;
+
+    font-size:10px;
+}
+
+.composer-model{
+    color:#777;
+}
+
+/* =========================================================
+   SETTINGS PANEL
+========================================================= */
+
+.settings-overlay{
+    position:fixed;
+    inset:0;
+
+    z-index:50;
+
+    background:rgba(0,0,0,.48);
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:opacity .2s ease;
+}
+
+.settings-overlay.open{
+    opacity:1;
+    pointer-events:auto;
+}
+
+.settings{
+    position:absolute;
+
+    top:50%;
+    left:50%;
+
+    width:min(500px,calc(100% - 30px));
+    max-height:min(700px,calc(100vh - 40px));
+
+    overflow-y:auto;
+
+    transform:
+        translate(-50%,-48%)
+        scale(.98);
+
+    border:1px solid #444;
+    border-radius:16px;
+
+    background:#252525;
+
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.55);
+
+    transition:transform .2s var(--ease);
+}
+
+.settings-overlay.open .settings{
+    transform:
+        translate(-50%,-50%)
+        scale(1);
+}
+
+.settings-head{
+    height:60px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 18px;
+
+    border-bottom:1px solid #383838;
+}
+
+.settings-title{
+    font-size:16px;
+    font-weight:600;
+}
+
+.settings-body{
+    padding:18px;
+}
+
+.setting{
+    margin-bottom:20px;
+}
+
+.setting:last-child{
+    margin-bottom:0;
+}
+
+.setting-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-bottom:8px;
+}
+
+.setting-name{
+    font-size:13px;
+    font-weight:550;
+}
+
+.setting-value{
+    padding:3px 7px;
+
+    border-radius:5px;
+
+    background:#333;
+
+    color:#aaa;
+
+    font-size:11px;
+
+    font-family:monospace;
+}
+
+.setting-description{
+    margin-top:5px;
+
+    color:#777;
+
+    font-size:11px;
+    line-height:1.45;
+}
+
+input[type="range"]{
+    width:100%;
+
+    accent-color:#10a37f;
+
+    cursor:pointer;
+}
+
+input[type="number"]{
+    width:100%;
+    height:38px;
+
+    padding:0 10px;
+
+    border:1px solid #444;
+    border-radius:8px;
+
+    outline:none;
+
+    background:#1d1d1d;
+
+    color:#eee;
+
+    font:inherit;
+    font-size:13px;
+}
+
+input[type="number"]:focus{
+    border-color:#666;
+}
+
+.model-meta{
+    padding:13px;
+
+    border:1px solid #3b3b3b;
+    border-radius:10px;
+
+    background:#1d1d1d;
+}
+
+.meta-row{
+    display:flex;
+    justify-content:space-between;
+
+    gap:20px;
+
+    padding:7px 0;
+
+    border-bottom:1px solid #292929;
+
+    font-size:11px;
+}
+
+.meta-row:last-child{
+    border-bottom:0;
+}
+
+.meta-key{
+    color:#777;
+}
+
+.meta-value{
+    max-width:65%;
+
+    color:#bbb;
+
+    text-align:right;
+
+    overflow-wrap:anywhere;
+}
+
+.close-settings{
+    width:32px;
+    height:32px;
+
+    display:grid;
+    place-items:center;
+
+    border:0;
+    border-radius:7px;
+
+    background:transparent;
+
+    color:#999;
+
+    cursor:pointer;
+}
+
+.close-settings:hover{
+    background:#333;
+    color:white;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast{
+    position:fixed;
+
+    left:50%;
+    bottom:90px;
+
+    z-index:100;
+
+    transform:
+        translate(-50%,10px);
+
+    padding:9px 13px;
+
+    border:1px solid #444;
+    border-radius:8px;
+
+    background:#303030;
+
+    color:#ddd;
+
+    font-size:12px;
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,.35);
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+.toast.show{
+    opacity:1;
+
+    transform:
+        translate(-50%,0);
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+*{
+    scrollbar-width:thin;
+    scrollbar-color:#444 transparent;
+}
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#444;
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#555;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+.mobile-overlay{
+    display:none;
+
+    position:fixed;
+    inset:0;
+
+    z-index:20;
+
+    background:rgba(0,0,0,.55);
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:opacity .2s ease;
+}
+
+@media(max-width:800px){
+
+    .sidebar{
+        position:fixed;
+
+        z-index:30;
+
+        top:0;
+        bottom:0;
+        left:0;
+
+        transform:translateX(-100%);
+
+        box-shadow:
+            20px 0 60px rgba(0,0,0,.35);
+    }
+
+    .sidebar.open{
+        transform:translateX(0);
+    }
+
+    .mobile-overlay{
+        display:block;
+    }
+
+    .mobile-overlay.open{
+        opacity:1;
+        pointer-events:auto;
+    }
+
+    .mobile-menu{
+        display:grid;
+        place-items:center;
+    }
+
+    .header{
+        padding:0 10px;
+    }
+
+    .model-name{
+        max-width:170px;
+    }
+
+    .suggestions{
+        grid-template-columns:1fr;
+    }
+
+    .welcome{
+        padding-top:65px;
+    }
+
+    .message{
+        padding-left:15px;
+        padding-right:15px;
+    }
+
+    .message-row{
+        gap:11px;
+    }
+
+    .message-text{
+        font-size:14px;
+    }
+
+    .composer-area{
+        padding-left:10px;
+        padding-right:10px;
+    }
+
+    .composer-bottom{
+        display:none;
+    }
+}
+
+@media(max-width:480px){
+
+    .welcome{
+        width:100%;
+
+        padding-left:15px;
+        padding-right:15px;
+    }
+
+    .welcome h1{
+        font-size:29px;
+    }
+
+    .welcome p{
+        font-size:14px;
+    }
+
+    .suggestions{
+        margin-top:30px;
+    }
+
+    .suggestion{
+        min-height:74px;
+    }
+
+    .message-avatar{
+        width:27px;
+        height:27px;
+        min-width:27px;
+    }
+}
+
+.hidden{
+    display:none!important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- =======================================================
+     SIDEBAR
+======================================================= -->
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-top">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M12 3.5c1.8 0 2.8 1.8 4 2.5
+                        1.2.7 3.3.3 4.2 1.8
+                        .9 1.5-.3 2.9-.5 4.2
+                        -.2 1.4 1 3.1-.2 4.3
+                        -1.2 1.2-2.8.1-4.2.5
+                        -1.4.4-2.5 2.1-4 1.6
+                        -1.5-.5-1.5-2.4-2.4-3.4
+                        -.9-1-2.9-1.1-3.3-2.7
+                        -.4-1.5 1.2-2.5 1.3-3.9
+                        .1-1.5-1-3-.1-4.2
+                        .9-1.2 2.8-.8 4-1.5
+                        1.2-.7 1.4-3.2 3.2-3.2Z"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                    />
+                    <circle
+                        cx="12"
+                        cy="12"
+                        r="2"
+                        fill="currentColor"
+                    />
+                </svg>
+            </div>
+
+            <span>Local AI</span>
 
         </div>
 
+        <button class="new-chat" id="newChat">
+            <svg viewBox="0 0 24 24" fill="none">
+                <path
+                    d="M12 5v14M5 12h14"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+            </svg>
+            <span>New chat</span>
+        </button>
+
+    </div>
+
+
+    <div class="history">
+
+        <div class="history-label">
+            Conversations
+        </div>
+
+        <div id="historyList"></div>
+
+    </div>
+
+
+    <div class="sidebar-bottom">
+
+        <div
+            class="connection"
+            id="connection"
+        >
+            <span class="connection-dot"></span>
+            <span id="connectionText">
+                Connecting to Ollama…
+            </span>
+        </div>
+
+    </div>
+
+</aside>
+
+
+<div
+    class="mobile-overlay"
+    id="mobileOverlay"
+></div>
+
+
+<!-- =======================================================
+     MAIN
+======================================================= -->
+
+<main class="main">
+
+    <header class="header">
+
+        <div class="header-left">
+
+            <button
+                class="mobile-menu"
+                id="mobileMenu"
+                aria-label="Open sidebar"
+            >
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M4 6h16M4 12h16M4 18h16"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </button>
+
+
+            <button
+                class="model-button"
+                id="modelButton"
+            >
+
+                <span class="model-dot"></span>
+
+                <span
+                    class="model-name"
+                    id="modelName"
+                >
+                    Gemma 3 · 1B
+                </span>
+
+                <span class="model-chevron">
+                    ▾
+                </span>
+
+            </button>
+
+        </div>
+
+
+        <div class="header-actions">
+
+            <button
+                class="icon-btn"
+                id="settingsButton"
+                title="Model settings"
+            >
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M12 15.2a3.2 3.2 0 1 0 0-6.4
+                        3.2 3.2 0 0 0 0 6.4Z"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                    />
+                    <path
+                        d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.8 1.8-.06-.06a1.7 1.7 0 0 0-1.88-.34
+                        1.7 1.7 0 0 0-1.03 1.56V20h-2.55v-.1a1.7 1.7 0 0 0-1.03-1.56
+                        1.7 1.7 0 0 0-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 0 0 8.1 15
+                        1.7 1.7 0 0 0 6.54 14H6.45v-2.55h.09A1.7 1.7 0 0 0 8.1 10
+                        1.7 1.7 0 0 0 7.76 8.1L7.7 8.04l1.8-1.8.06.06A1.7 1.7 0 0 0 11.44 6
+                        1.7 1.7 0 0 0 12.47 4.44V4h2.55v.44A1.7 1.7 0 0 0 16.05 6
+                        1.7 1.7 0 0 0 17.93 6.3l.06-.06 1.8 1.8-.06.06A1.7 1.7 0 0 0 19.4 10
+                        1.7 1.7 0 0 0 20.96 11.45h.09V14h-.09A1.7 1.7 0 0 0 19.4 15Z"
+                        stroke="currentColor"
+                        stroke-width="1.2"
+                    />
+                </svg>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- ===================================================
+         CHAT
+    ==================================================== -->
+
+    <section
+        class="chat"
+        id="chat"
+    >
+
+        <div class="chat-inner">
+
+            <div
+                class="welcome"
+                id="welcome"
+            >
+
+                <div class="welcome-mark">
+
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path
+                            d="M12 3.5c1.8 0 2.8 1.8 4 2.5
+                            1.2.7 3.3.3 4.2 1.8
+                            .9 1.5-.3 2.9-.5 4.2
+                            -.2 1.4 1 3.1-.2 4.3
+                            -1.2 1.2-2.8.1-4.2.5
+                            -1.4.4-2.5 2.1-4 1.6
+                            -1.5-.5-1.5-2.4-2.4-3.4
+                            -.9-1-2.9-1.1-3.3-2.7
+                            -.4-1.5 1.2-2.5 1.3-3.9
+                            .1-1.5-1-3-.1-4.2
+                            .9-1.2 2.8-.8 4-1.5
+                            1.2-.7 1.4-3.2 3.2-3.2Z"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                        />
+
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="2"
+                            fill="currentColor"
+                        />
+                    </svg>
+
+                </div>
+
+
+                <h1>
+                    How can I help you today?
+                </h1>
+
+
+                <p>
+                    Your AI runs locally through Ollama.
+                    Your conversations stay on your machine.
+                </p>
+
+
+                <div class="suggestions">
+
+                    <button
+                        class="suggestion"
+                        data-prompt="Explain how HTTP works like I'm a complete beginner."
+                    >
+                        <div class="suggestion-title">
+                            Explain something
+                        </div>
+
+                        <div class="suggestion-text">
+                            Turn a complicated concept into something simple.
+                        </div>
+                    </button>
+
+
+                    <button
+                        class="suggestion"
+                        data-prompt="Give me three interesting programming projects I can build this weekend."
+                    >
+                        <div class="suggestion-title">
+                            Brainstorm ideas
+                        </div>
+
+                        <div class="suggestion-text">
+                            Find something useful and fun to build.
+                        </div>
+                    </button>
+
+
+                    <button
+                        class="suggestion"
+                        data-prompt="Write a clean JavaScript function that demonstrates recursion and explain how it works."
+                    >
+                        <div class="suggestion-title">
+                            Write some code
+                        </div>
+
+                        <div class="suggestion-text">
+                            Build it and explain the important parts.
+                        </div>
+                    </button>
+
+
+                    <button
+                        class="suggestion"
+                        data-prompt="Teach me one fascinating computer science concept."
+                    >
+                        <div class="suggestion-title">
+                            Learn something new
+                        </div>
+
+                        <div class="suggestion-text">
+                            Give me an interesting rabbit hole.
+                        </div>
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="messages hidden"
+                id="messages"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         COMPOSER
+    ==================================================== -->
+
+    <div class="composer-area">
+
+        <div class="composer">
+
+            <textarea
+                id="prompt"
+                rows="1"
+                placeholder="Message your local AI..."
+                aria-label="Message your local AI"
+            ></textarea>
+
+
+            <button
+                class="send-button"
+                id="sendButton"
+                aria-label="Send"
+            >
+
+                <svg
+                    id="sendSvg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    width="18"
+                    height="18"
+                >
+                    <path
+                        d="M12 19V5"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    />
+
+                    <path
+                        d="M6 11l6-6 6 6"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+
+            </button>
+
+        </div>
+
+
+        <div class="composer-bottom">
+
+            <span>
+                Enter to send · Shift + Enter for newline
+            </span>
+
+            <span
+                class="composer-model"
+                id="composerModel"
+            >
+                Gemma 3
+            </span>
+
+        </div>
+
+    </div>
+
+</main>
+
+</div>
+
+
+<!-- =======================================================
+     SETTINGS
+======================================================= -->
+
+<div
+    class="settings-overlay"
+    id="settingsOverlay"
+>
+
+    <div class="settings">
+
+        <div class="settings-head">
+
+            <div class="settings-title">
+                Model parameters
+            </div>
+
+            <button
+                class="close-settings"
+                id="closeSettings"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="settings-body">
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Temperature
+                    </span>
+
+                    <span
+                        class="setting-value"
+                        id="temperatureValue"
+                    >
+                        0.7
+                    </span>
+                </div>
+
+                <input
+                    id="temperature"
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    value="0.7"
+                >
+
+                <div class="setting-description">
+                    Controls randomness. Lower values are more predictable.
+                </div>
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Top P
+                    </span>
+
+                    <span
+                        class="setting-value"
+                        id="topPValue"
+                    >
+                        0.9
+                    </span>
+                </div>
+
+                <input
+                    id="topP"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.9"
+                >
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Top K
+                    </span>
+
+                    <span
+                        class="setting-value"
+                        id="topKValue"
+                    >
+                        40
+                    </span>
+                </div>
+
+                <input
+                    id="topK"
+                    type="range"
+                    min="1"
+                    max="100"
+                    step="1"
+                    value="40"
+                >
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Min P
+                    </span>
+
+                    <span
+                        class="setting-value"
+                        id="minPValue"
+                    >
+                        0.05
+                    </span>
+                </div>
+
+                <input
+                    id="minP"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.05"
+                >
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Repeat penalty
+                    </span>
+
+                    <span
+                        class="setting-value"
+                        id="repeatValue"
+                    >
+                        1.1
+                    </span>
+                </div>
+
+                <input
+                    id="repeatPenalty"
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value="1.1"
+                >
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Context size
+                    </span>
+                </div>
+
+                <input
+                    id="contextSize"
+                    type="number"
+                    min="512"
+                    max="131072"
+                    step="512"
+                    value="8192"
+                >
+
+                <div class="setting-description">
+                    Number of tokens available to the conversation.
+                </div>
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Maximum output
+                    </span>
+                </div>
+
+                <input
+                    id="maxTokens"
+                    type="number"
+                    min="128"
+                    max="32768"
+                    step="128"
+                    value="4096"
+                >
+
+            </div>
+
+
+            <div class="setting">
+
+                <div class="setting-top">
+                    <span class="setting-name">
+                        Model information
+                    </span>
+                </div>
+
+                <div
+                    class="model-meta"
+                    id="modelMeta"
+                >
+                    Loading model information…
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div
+    class="toast"
+    id="toast"
+>
+    Copied
+</div>
+
+
+<script>
+/* =========================================================
+   CONFIG
+========================================================= */
+
+const OLLAMA_API =
+    "http://localhost:11434";
+
+
+const CHAT_API =
+    `${OLLAMA_API}/api/chat`;
+
+
+const SHOW_API =
+    `${OLLAMA_API}/api/show`;
+
+
+const TAGS_API =
+    `${OLLAMA_API}/api/tags`;
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const sidebar =
+    document.getElementById("sidebar");
+
+const mobileMenu =
+    document.getElementById("mobileMenu");
+
+const mobileOverlay =
+    document.getElementById("mobileOverlay");
+
+const newChat =
+    document.getElementById("newChat");
+
+const historyList =
+    document.getElementById("historyList");
+
+const chat =
+    document.getElementById("chat");
+
+const welcome =
+    document.getElementById("welcome");
+
+const messages =
+    document.getElementById("messages");
+
+const promptInput =
+    document.getElementById("prompt");
+
+const sendButton =
+    document.getElementById("sendButton");
+
+const sendSvg =
+    document.getElementById("sendSvg");
+
+const modelName =
+    document.getElementById("modelName");
+
+const composerModel =
+    document.getElementById("composerModel");
+
+const connection =
+    document.getElementById("connection");
+
+const connectionText =
+    document.getElementById("connectionText");
+
+const settingsButton =
+    document.getElementById("settingsButton");
+
+const settingsOverlay =
+    document.getElementById("settingsOverlay");
+
+const closeSettings =
+    document.getElementById("closeSettings");
+
+const modelMeta =
+    document.getElementById("modelMeta");
+
+const toast =
+    document.getElementById("toast");
+
+
+/* =========================================================
+   PARAMETERS
+========================================================= */
+
+const temperature =
+    document.getElementById("temperature");
+
+const topP =
+    document.getElementById("topP");
+
+const topK =
+    document.getElementById("topK");
+
+const minP =
+    document.getElementById("minP");
+
+const repeatPenalty =
+    document.getElementById("repeatPenalty");
+
+const contextSize =
+    document.getElementById("contextSize");
+
+const maxTokens =
+    document.getElementById("maxTokens");
+
+
+const temperatureValue =
+    document.getElementById("temperatureValue");
+
+const topPValue =
+    document.getElementById("topPValue");
+
+const topKValue =
+    document.getElementById("topKValue");
+
+const minPValue =
+    document.getElementById("minPValue");
+
+const repeatValue =
+    document.getElementById("repeatValue");
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let selectedModel =
+    localStorage.getItem("local-ai-model")
+    || "gemma3:1b";
+
+
+let conversation = [];
+
+let isGenerating = false;
+
+let abortController = null;
+
+let currentAssistantElement = null;
+
+let modelInformation = null;
+
+
+/* =========================================================
+   MODEL LABEL
+========================================================= */
+
+function prettyModelName(model){
+
+    if(!model)
+        return "Local model";
+
+    const names = {
+
+        "gemma3:1b":
+            "Gemma 3 · 1B",
+
+        "gemma3:4b":
+            "Gemma 3 · 4B",
+
+        "gemma3:12b":
+            "Gemma 3 · 12B",
+
+        "gemma3:27b":
+            "Gemma 3 · 27B",
+
+        "qwen2.5:7b":
+            "Qwen 2.5 · 7B",
+
+        "qwen2.5-coder:7b":
+            "Qwen 2.5 Coder · 7B"
+    };
+
+    return names[model]
+        || model
+            .replace(/:/g," · ")
+            .replace(/-/g," ");
+}
+
+
+function updateModelUI(){
+
+    const name =
+        prettyModelName(selectedModel);
+
+    modelName.textContent =
+        name;
+
+    composerModel.textContent =
+        name;
+
+    localStorage.setItem(
+        "local-ai-model",
+        selectedModel
+    );
+}
+
+
+/* =========================================================
+   OLLAMA CONNECTION
+========================================================= */
+
+async function checkOllama(){
+
+    try{
+
+        const response =
+            await fetch(
+                TAGS_API,
+                {
+                    method:"GET"
+                }
+            );
+
+        if(!response.ok)
+            throw new Error();
+
+        connection.classList.add("online");
+        connection.classList.remove("offline");
+
+        connectionText.textContent =
+            "Ollama connected";
+
+        await loadModels();
+
+        await loadModelInformation();
+
+    }catch(error){
+
+        connection.classList.remove("online");
+        connection.classList.add("offline");
+
+        connectionText.textContent =
+            "Ollama unavailable";
+
+        modelMeta.innerHTML = `
+            <div style="color:#e16a6a">
+                Cannot connect to Ollama.
+            </div>
+            <div style="margin-top:7px;color:#777">
+                Start Ollama and refresh this page.
+            </div>
+        `;
+    }
+}
+
+
+/* =========================================================
+   LOAD MODELS
+========================================================= */
+
+async function loadModels(){
+
+    try{
+
+        const response =
+            await fetch(TAGS_API);
+
+        const data =
+            await response.json();
+
+        const models =
+            data.models || [];
+
+        if(!models.length)
+            return;
+
+        const exists =
+            models.some(
+                m => m.name === selectedModel
+            );
+
+        if(!exists){
+
+            const gemma =
+                models.find(
+                    m =>
+                        m.name
+                        .toLowerCase()
+                        .includes("gemma")
+                );
+
+            selectedModel =
+                gemma?.name
+                || models[0].name;
+
+            updateModelUI();
+        }
+
+    }catch(error){
+
+        console.warn(
+            "Could not load Ollama models",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   MODEL INFORMATION
+========================================================= */
+
+async function loadModelInformation(){
+
+    modelMeta.innerHTML =
+        `<div style="color:#777">Loading model information…</div>`;
+
+    try{
+
+        const response =
+            await fetch(
+                SHOW_API,
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            model:selectedModel
+                        })
+                }
+            );
+
+        if(!response.ok)
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
+        modelInformation =
+            await response.json();
+
+        renderModelInformation();
+
+    }catch(error){
+
+        modelMeta.innerHTML = `
+            <div style="color:#777">
+                Metadata unavailable for
+                <strong>${escapeHTML(selectedModel)}</strong>.
+            </div>
+        `;
+    }
+}
+
+
+function renderModelInformation(){
+
+    if(!modelInformation){
+
+        modelMeta.textContent =
+            "No model information.";
+
+        return;
+    }
+
+    const details =
+        modelInformation.details || {};
+
+    const parameters =
+        modelInformation.parameters || "";
+
+    const template =
+        modelInformation.template
+        ? "Available"
+        : "Not exposed";
+
+
+    const rows = [
+
+        [
+            "Model",
+            selectedModel
+        ],
+
+        [
+            "Family",
+            details.family || "—"
+        ],
+
+        [
+            "Parameter size",
+            details.parameter_size || "—"
+        ],
+
+        [
+            "Quantization",
+            details.quantization_level || "—"
+        ],
+
+        [
+            "Format",
+            details.format || "—"
+        ],
+
+        [
+            "Template",
+            template
+        ],
+
+        [
+            "Parameters",
+            parameters
+                ? "Model parameters available"
+                : "Not exposed"
+        ]
+    ];
+
+
+    modelMeta.innerHTML =
+        rows
+            .map(
+                ([key,value]) => `
+                    <div class="meta-row">
+                        <span class="meta-key">
+                            ${escapeHTML(key)}
+                        </span>
+
+                        <span class="meta-value">
+                            ${escapeHTML(String(value))}
+                        </span>
+                    </div>
+                `
+            )
+            .join("");
+}
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+function bindRange(
+    element,
+    output,
+    decimals=2
+){
+
+    element.addEventListener(
+        "input",
+        () => {
+
+            output.textContent =
+                Number(
+                    element.value
+                ).toFixed(decimals);
+
+            saveSettings();
+
+        }
+    );
+}
+
+
+bindRange(
+    temperature,
+    temperatureValue,
+    2
+);
+
+bindRange(
+    topP,
+    topPValue,
+    2
+);
+
+bindRange(
+    topK,
+    topKValue,
+    0
+);
+
+bindRange(
+    minP,
+    minPValue,
+    2
+);
+
+bindRange(
+    repeatPenalty,
+    repeatValue,
+    2
+);
+
+
+[
+    contextSize,
+    maxTokens
+].forEach(
+    input => {
+
+        input.addEventListener(
+            "input",
+            saveSettings
+        );
+
+    }
+);
+
+
+function saveSettings(){
+
+    const settings = {
+
+        temperature:
+            Number(temperature.value),
+
+        topP:
+            Number(topP.value),
+
+        topK:
+            Number(topK.value),
+
+        minP:
+            Number(minP.value),
+
+        repeatPenalty:
+            Number(repeatPenalty.value),
+
+        contextSize:
+            Number(contextSize.value),
+
+        maxTokens:
+            Number(maxTokens.value)
+    };
+
+    localStorage.setItem(
+        "local-ai-settings",
+        JSON.stringify(settings)
+    );
+}
+
+
+function loadSettings(){
+
+    try{
+
+        const raw =
+            localStorage.getItem(
+                "local-ai-settings"
+            );
+
+        if(!raw)
+            return;
+
+        const s =
+            JSON.parse(raw);
+
+        if(s.temperature != null)
+            temperature.value =
+                s.temperature;
+
+        if(s.topP != null)
+            topP.value =
+                s.topP;
+
+        if(s.topK != null)
+            topK.value =
+                s.topK;
+
+        if(s.minP != null)
+            minP.value =
+                s.minP;
+
+        if(s.repeatPenalty != null)
+            repeatPenalty.value =
+                s.repeatPenalty;
+
+        if(s.contextSize != null)
+            contextSize.value =
+                s.contextSize;
+
+        if(s.maxTokens != null)
+            maxTokens.value =
+                s.maxTokens;
+
+        temperatureValue.textContent =
+            Number(temperature.value).toFixed(2);
+
+        topPValue.textContent =
+            Number(topP.value).toFixed(2);
+
+        topKValue.textContent =
+            Number(topK.value).toFixed(0);
+
+        minPValue.textContent =
+            Number(minP.value).toFixed(2);
+
+        repeatValue.textContent =
+            Number(repeatPenalty.value).toFixed(2);
+
+    }catch{}
+}
+
+
+settingsButton.addEventListener(
+    "click",
+    () => {
+
+        settingsOverlay.classList.add(
+            "open"
+        );
+
+        loadModelInformation();
+
+    }
+);
+
+
+closeSettings.addEventListener(
+    "click",
+    () => {
+
+        settingsOverlay.classList.remove(
+            "open"
+        );
+
+    }
+);
+
+
+settingsOverlay.addEventListener(
+    "click",
+    event => {
+
+        if(
+            event.target ===
+            settingsOverlay
+        ){
+
+            settingsOverlay.classList.remove(
+                "open"
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MOBILE SIDEBAR
+========================================================= */
+
+mobileMenu.addEventListener(
+    "click",
+    () => {
+
+        sidebar.classList.add(
+            "open"
+        );
+
+        mobileOverlay.classList.add(
+            "open"
+        );
+
+    }
+);
+
+
+mobileOverlay.addEventListener(
+    "click",
+    closeMobileSidebar
+);
+
+
+function closeMobileSidebar(){
+
+    sidebar.classList.remove(
+        "open"
+    );
+
+    mobileOverlay.classList.remove(
+        "open"
+    );
+
+}
+
+
+/* =========================================================
+   NEW CHAT
+========================================================= */
+
+newChat.addEventListener(
+    "click",
+    () => {
+
+        if(isGenerating)
+            stopGeneration();
+
+        conversation = [];
+
+        messages.innerHTML = "";
+
+        messages.classList.add(
+            "hidden"
+        );
+
+        welcome.classList.remove(
+            "hidden"
+        );
+
+        promptInput.value = "";
+
+        autoResize();
+
+        closeMobileSidebar();
+
+        promptInput.focus();
+
+    }
+);
+
+
+/* =========================================================
+   SUGGESTIONS
+========================================================= */
+
+document
+    .querySelectorAll(".suggestion")
+    .forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    promptInput.value =
+                        button.dataset.prompt;
+
+                    autoResize();
+
+                    promptInput.focus();
+
+                }
+            );
+
+        }
+    );
+
+
+/* =========================================================
+   TEXTAREA
+========================================================= */
+
+function autoResize(){
+
+    promptInput.style.height =
+        "auto";
+
+    promptInput.style.height =
+        Math.min(
+            promptInput.scrollHeight,
+            180
+        ) + "px";
+}
+
+
+promptInput.addEventListener(
+    "input",
+    autoResize
+);
+
+
+/* =========================================================
+   ENTER
+========================================================= */
+
+promptInput.addEventListener(
+    "keydown",
+    event => {
+
+        if(
+            event.key === "Enter" &&
+            !event.shiftKey
+        ){
+
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MARKDOWN RENDERER
+========================================================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+function renderMarkdown(text){
+
+    if(!text)
+        return "";
+
+    const blocks = [];
+
+    let source =
+        String(text)
+            .replace(/\r\n/g,"\n");
+
+
+    /*
+       Extract fenced code first.
+    */
+
+    source =
+        source.replace(
+            /```([\w+-]*)\n?([\s\S]*?)```/g,
+            (
+                match,
+                language,
+                code
+            ) => {
+
+                const index =
+                    blocks.length;
+
+                blocks.push({
+                    language:
+                        language || "code",
+
+                    code
+                });
+
+                return `\n@@CODE${index}@@\n`;
+            }
+        );
+
+
+    let html =
+        escapeHTML(source);
+
+
+    /*
+       Headings
+    */
+
+    html =
+        html.replace(
+            /^### (.*)$/gm,
+            "<h3>$1</h3>"
+        );
+
+    html =
+        html.replace(
+            /^## (.*)$/gm,
+            "<h2>$1</h2>"
+        );
+
+    html =
+        html.replace(
+            /^# (.*)$/gm,
+            "<h1>$1</h1>"
+        );
+
+
+    /*
+       Bold
+    */
+
+    html =
+        html.replace(
+            /\*\*(.+?)\*\*/g,
+            "<strong>$1</strong>"
+        );
+
+
+    /*
+       Inline code
+    */
+
+    html =
+        html.replace(
+            /`([^`\n]+)`/g,
+            '<span class="inline-code">$1</span>'
+        );
+
+
+    /*
+       Bullet lists
+    */
+
+    html =
+        html.replace(
+            /(?:^|\n)([-*]) (.+)(?=\n|$)/g,
+            "\n<li>$2</li>"
+        );
+
+
+    html =
+        html.replace(
+            /((?:<li>.*<\/li>\n?)+)/g,
+            "<ul>$1</ul>"
+        );
+
+
+    /*
+       Numbered lists
+    */
+
+    html =
+        html.replace(
+            /(?:^|\n)\d+\. (.+)(?=\n|$)/g,
+            "\n<li>$1</li>"
+        );
+
+
+    /*
+       Paragraphs / line breaks
+    */
+
+    const lines =
+        html.split("\n");
+
+
+    let result = "";
+
+    let paragraph = [];
+
+
+    function flushParagraph(){
+
+        if(!paragraph.length)
+            return;
+
+        const value =
+            paragraph.join("<br>");
+
+        if(
+            value.startsWith("<h1>") ||
+            value.startsWith("<h2>") ||
+            value.startsWith("<h3>") ||
+            value.startsWith("<ul>")
+        ){
+
+            result += value;
+
+        }else{
+
+            result +=
+                `<p>${value}</p>`;
+
+        }
+
+        paragraph = [];
+
+    }
+
+
+    for(
+        const line
+        of lines
+    ){
+
+        if(
+            /^<h[123]>/.test(line) ||
+            /^<ul>/.test(line) ||
+            /^@@CODE\d+@@$/.test(line)
+        ){
+
+            flushParagraph();
+
+            result += line;
+
+        }else{
+
+            paragraph.push(line);
+
+        }
+
+    }
+
+
+    flushParagraph();
+
+
+    /*
+       Restore code blocks.
+    */
+
+    blocks.forEach(
+        (block,index) => {
+
+            const code =
+                escapeHTML(
+                    block.code
+                        .replace(/\n$/,"")
+                );
+
+            const replacement = `
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span>
+                            ${escapeHTML(block.language)}
+                        </span>
+
+                        <button
+                            class="copy-code"
+                            data-code="${escapeHTML(block.code)}"
+                        >
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre><code>${code}</code></pre>
+
+                </div>
+            `;
+
+            result =
+                result.replace(
+                    `<p>@@CODE${index}@@</p>`,
+                    replacement
+                );
+
+            result =
+                result.replace(
+                    `@@CODE${index}@@`,
+                    replacement
+                );
+
+        }
+    );
+
+
+    return result;
+}
+
+
+/* =========================================================
+   SHOW CHAT
+========================================================= */
+
+function showMessages(){
+
+    welcome.classList.add(
+        "hidden"
+    );
+
+    messages.classList.remove(
+        "hidden"
+    );
+
+}
+
+
+/* =========================================================
+   AVATARS
+========================================================= */
+
+function aiIcon(){
+
+    return `
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+        >
+            <path
+                d="M12 3.5c1.8 0 2.8 1.8 4 2.5
+                1.2.7 3.3.3 4.2 1.8
+                .9 1.5-.3 2.9-.5 4.2
+                -.2 1.4 1 3.1-.2 4.3
+                -1.2 1.2-2.8.1-4.2.5
+                -1.4.4-2.5 2.1-4 1.6
+                -1.5-.5-1.5-2.4-2.4-3.4
+                -.9-1-2.9-1.1-3.3-2.7
+                -.4-1.5 1.2-2.5 1.3-3.9
+                .1-1.5-1-3-.1-4.2
+                .9-1.2 2.8-.8 4-1.5
+                1.2-.7 1.4-3.2 3.2-3.2Z"
+                stroke="currentColor"
+                stroke-width="1.4"
+            />
+
+            <circle
+                cx="12"
+                cy="12"
+                r="2"
+                fill="currentColor"
+            />
+        </svg>
+    `;
+}
+
+
+function userIcon(){
+
+    return `
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+        >
+            <circle
+                cx="12"
+                cy="8"
+                r="3.2"
+                stroke="currentColor"
+                stroke-width="1.7"
+            />
+
+            <path
+                d="M5.5 19c.8-3 3-4.5 6.5-4.5
+                s5.7 1.5 6.5 4.5"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+            />
+        </svg>
+    `;
+}
+
+
+/* =========================================================
+   ADD MESSAGE
+========================================================= */
+
+function addMessage(
+    role,
+    content
+){
+
+    showMessages();
+
+    const wrapper =
+        document.createElement("div");
+
+    wrapper.className =
+        `message ${role}`;
+
+
+    const row =
+        document.createElement("div");
+
+    row.className =
+        "message-row";
+
+
+    const avatar =
+        document.createElement("div");
+
+    avatar.className =
+        "message-avatar";
+
+    avatar.innerHTML =
+        role === "assistant"
+            ? aiIcon()
+            : userIcon();
+
+
+    const body =
+        document.createElement("div");
+
+    body.className =
+        "message-body";
+
+
+    const roleLabel =
+        document.createElement("div");
+
+    roleLabel.className =
+        "message-role";
+
+    roleLabel.textContent =
+        role === "assistant"
+            ? prettyModelName(selectedModel)
+            : "You";
+
+
+    const text =
+        document.createElement("div");
+
+    text.className =
+        "message-text";
+
+
+    if(role === "assistant"){
+
+        text.innerHTML =
+            renderMarkdown(content);
+
+    }else{
+
+        text.textContent =
+            content;
+
+    }
+
+
+    body.appendChild(
+        roleLabel
+    );
+
+    body.appendChild(
+        text
+    );
+
+
+    if(role === "assistant"){
+
+        const actions =
+            document.createElement("div");
+
+        actions.className =
+            "message-actions";
+
+
+        const copy =
+            document.createElement("button");
+
+        copy.className =
+            "message-action";
+
+        copy.title =
+            "Copy response";
+
+        copy.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none">
+                <rect
+                    x="8"
+                    y="8"
+                    width="11"
+                    height="11"
+                    rx="2"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                />
+
+                <path
+                    d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                />
+            </svg>
+        `;
+
+
+        copy.addEventListener(
+            "click",
+            () => {
+
+                copyText(
+                    content
+                );
+
+            }
+        );
+
+
+        actions.appendChild(
+            copy
+        );
+
+
+        body.appendChild(
+            actions
+        );
+
+    }
+
+
+    row.appendChild(
+        avatar
+    );
+
+    row.appendChild(
+        body
+    );
+
+    wrapper.appendChild(
+        row
+    );
+
+    messages.appendChild(
+        wrapper
+    );
+
+
+    /*
+       Bind code copy buttons.
+    */
+
+    text
+        .querySelectorAll(".copy-code")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        copyText(
+                            button
+                                .getAttribute(
+                                    "data-code"
+                                )
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    scrollToBottom();
+
+    return text;
+}
+
+
+/* =========================================================
+   TYPING
+========================================================= */
+
+function addTyping(){
+
+    showMessages();
+
+    const wrapper =
+        document.createElement("div");
+
+    wrapper.id =
+        "typingMessage";
+
+    wrapper.className =
+        "message assistant";
+
+
+    wrapper.innerHTML = `
+
+        <div class="message-row">
+
+            <div class="message-avatar">
+                ${aiIcon()}
+            </div>
+
+            <div class="message-body">
+
+                <div class="message-role">
+                    ${escapeHTML(prettyModelName(selectedModel))}
+                </div>
+
+                <div class="message-text">
+
+                    <div class="typing">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
     `;
 
-        input.focus();
-      }
-    </script>
-  </body>
+
+    messages.appendChild(
+        wrapper
+    );
+
+    scrollToBottom();
+}
+
+
+/* =========================================================
+   GENERATING BUTTON
+========================================================= */
+
+function setGenerating(
+    generating
+){
+
+    isGenerating =
+        generating;
+
+
+    if(generating){
+
+        sendButton.classList.add(
+            "stop"
+        );
+
+        sendButton.setAttribute(
+            "aria-label",
+            "Stop generating"
+        );
+
+        sendSvg.innerHTML = `
+            <rect
+                x="7"
+                y="7"
+                width="10"
+                height="10"
+                rx="2"
+                fill="currentColor"
+            />
+        `;
+
+    }else{
+
+        sendButton.classList.remove(
+            "stop"
+        );
+
+        sendButton.setAttribute(
+            "aria-label",
+            "Send"
+        );
+
+        sendSvg.innerHTML = `
+            <path
+                d="M12 19V5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+            />
+
+            <path
+                d="M6 11l6-6 6 6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        `;
+
+    }
+}
+
+
+/* =========================================================
+   SEND BUTTON
+========================================================= */
+
+sendButton.addEventListener(
+    "click",
+    () => {
+
+        if(isGenerating){
+
+            stopGeneration();
+
+        }else{
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   STOP
+========================================================= */
+
+function stopGeneration(){
+
+    if(abortController){
+
+        abortController.abort();
+
+        abortController = null;
+
+    }
+
+
+    const typing =
+        document.getElementById(
+            "typingMessage"
+        );
+
+    if(typing)
+        typing.remove();
+
+
+    setGenerating(false);
+}
+
+
+/* =========================================================
+   OLLAMA OPTIONS
+========================================================= */
+
+function getOptions(){
+
+    return {
+
+        temperature:
+            Number(
+                temperature.value
+            ),
+
+        top_p:
+            Number(
+                topP.value
+            ),
+
+        top_k:
+            Number(
+                topK.value
+            ),
+
+        min_p:
+            Number(
+                minP.value
+            ),
+
+        repeat_penalty:
+            Number(
+                repeatPenalty.value
+            ),
+
+        num_ctx:
+            Number(
+                contextSize.value
+            ),
+
+        num_predict:
+            Number(
+                maxTokens.value
+            )
+    };
+}
+
+
+/* =========================================================
+   SEND MESSAGE
+========================================================= */
+
+async function sendMessage(){
+
+    const text =
+        promptInput.value.trim();
+
+
+    if(
+        !text ||
+        isGenerating
+    )
+        return;
+
+
+    conversation.push({
+
+        role:"user",
+
+        content:text
+
+    });
+
+
+    addMessage(
+        "user",
+        text
+    );
+
+
+    promptInput.value = "";
+
+    autoResize();
+
+    addTyping();
+
+    setGenerating(true);
+
+
+    abortController =
+        new AbortController();
+
+
+    try{
+
+        const response =
+            await fetch(
+                CHAT_API,
+                {
+
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    signal:
+                        abortController.signal,
+
+                    body:
+                        JSON.stringify({
+
+                            model:
+                                selectedModel,
+
+                            messages:
+                                conversation,
+
+                            stream:true,
+
+                            options:
+                                getOptions()
+
+                        })
+
+                }
+            );
+
+
+        if(!response.ok){
+
+            let detail = "";
+
+            try{
+
+                detail =
+                    await response.text();
+
+            }catch{}
+
+
+            throw new Error(
+                `Ollama returned HTTP ${response.status}${detail ? ": " + detail : ""}`
+            );
+
+        }
+
+
+        const typing =
+            document.getElementById(
+                "typingMessage"
+            );
+
+        if(typing)
+            typing.remove();
+
+
+        const assistantElement =
+            addMessage(
+                "assistant",
+                ""
+            );
+
+
+        currentAssistantElement =
+            assistantElement;
+
+
+        const reader =
+            response.body.getReader();
+
+
+        const decoder =
+            new TextDecoder();
+
+
+        let buffer = "";
+
+        let answer = "";
+
+
+        /*
+           IMPORTANT:
+           Ollama streaming is NDJSON.
+           A JSON object can be split between
+           network chunks, so we keep a buffer.
+        */
+
+        while(true){
+
+            const {
+                done,
+                value
+            } =
+                await reader.read();
+
+
+            if(done)
+                break;
+
+
+            buffer +=
+                decoder.decode(
+                    value,
+                    {
+                        stream:true
+                    }
+                );
+
+
+            const lines =
+                buffer.split("\n");
+
+
+            buffer =
+                lines.pop()
+                || "";
+
+
+            for(
+                const line
+                of lines
+            ){
+
+                if(!line.trim())
+                    continue;
+
+
+                let data;
+
+                try{
+
+                    data =
+                        JSON.parse(
+                            line
+                        );
+
+                }catch(error){
+
+                    console.warn(
+                        "Invalid Ollama JSON:",
+                        line
+                    );
+
+                    continue;
+
+                }
+
+
+                const token =
+                    data
+                        ?.message
+                        ?.content
+                    || "";
+
+
+                if(token){
+
+                    answer +=
+                        token;
+
+
+                    assistantElement.innerHTML =
+                        renderMarkdown(
+                            answer
+                        );
+
+
+                    bindCodeButtons(
+                        assistantElement
+                    );
+
+
+                    scrollToBottom();
+
+                }
+
+
+                if(data.done){
+
+                    break;
+
+                }
+
+            }
+
+        }
+
+
+        /*
+           Process remaining buffer.
+        */
+
+        if(buffer.trim()){
+
+            try{
+
+                const data =
+                    JSON.parse(
+                        buffer
+                    );
+
+                const token =
+                    data
+                        ?.message
+                        ?.content
+                    || "";
+
+                if(token){
+
+                    answer +=
+                        token;
+
+                    assistantElement.innerHTML =
+                        renderMarkdown(
+                            answer
+                        );
+
+                }
+
+            }catch{}
+
+        }
+
+
+        if(!answer){
+
+            answer =
+                "The model returned an empty response.";
+
+            assistantElement.textContent =
+                answer;
+
+        }
+
+
+        conversation.push({
+
+            role:"assistant",
+
+            content:answer
+
+        });
+
+
+    }catch(error){
+
+        const typing =
+            document.getElementById(
+                "typingMessage"
+            );
+
+        if(typing)
+            typing.remove();
+
+
+        if(
+            error.name ===
+            "AbortError"
+        ){
+
+            return;
+
+        }
+
+
+        const errorMessage =
+            `I couldn't connect to Ollama.
+
+Make sure Ollama is running and that the selected model exists.
+
+${error.message}`;
+
+
+        addMessage(
+            "assistant",
+            errorMessage
+        );
+
+    }finally{
+
+        abortController = null;
+
+        currentAssistantElement = null;
+
+        setGenerating(false);
+
+        promptInput.focus();
+
+    }
+
+}
+
+
+/* =========================================================
+   CODE BUTTONS
+========================================================= */
+
+function bindCodeButtons(
+    container
+){
+
+    container
+        .querySelectorAll(".copy-code")
+        .forEach(
+            button => {
+
+                if(
+                    button.dataset.bound
+                )
+                    return;
+
+
+                button.dataset.bound =
+                    "true";
+
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        copyText(
+                            button.getAttribute(
+                                "data-code"
+                            )
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   COPY
+========================================================= */
+
+async function copyText(
+    text
+){
+
+    try{
+
+        await navigator.clipboard.writeText(
+            text
+        );
+
+        showToast(
+            "Copied to clipboard"
+        );
+
+    }catch{
+
+        showToast(
+            "Could not copy"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer;
+
+function showToast(
+    text
+){
+
+    toast.textContent =
+        text;
+
+    toast.classList.add(
+        "show"
+    );
+
+
+    clearTimeout(
+        toastTimer
+    );
+
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+            },
+            1500
+        );
+
+}
+
+
+/* =========================================================
+   SCROLL
+========================================================= */
+
+function scrollToBottom(){
+
+    requestAnimationFrame(
+        () => {
+
+            chat.scrollTo({
+
+                top:
+                    chat.scrollHeight,
+
+                behavior:
+                    "smooth"
+
+            });
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   MODEL BUTTON
+========================================================= */
+
+document
+    .getElementById("modelButton")
+    .addEventListener(
+        "click",
+        async () => {
+
+            await loadModels();
+
+            /*
+               A simple native model chooser is used
+               so the UI doesn't need another dependency.
+            */
+
+            try{
+
+                const response =
+                    await fetch(
+                        TAGS_API
+                    );
+
+                const data =
+                    await response.json();
+
+                const models =
+                    data.models || [];
+
+
+                if(!models.length){
+
+                    showToast(
+                        "No Ollama models found"
+                    );
+
+                    return;
+
+                }
+
+
+                const names =
+                    models
+                        .map(
+                            m => m.name
+                        )
+                        .join("\n");
+
+
+                const choice =
+                    prompt(
+                        `Choose an installed Ollama model:\n\n${names}`,
+                        selectedModel
+                    );
+
+
+                if(
+                    choice &&
+                    models.some(
+                        m =>
+                            m.name === choice.trim()
+                    )
+                ){
+
+                    selectedModel =
+                        choice.trim();
+
+                    updateModelUI();
+
+                    await loadModelInformation();
+
+                }
+
+            }catch{
+
+                showToast(
+                    "Could not read Ollama models"
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+loadSettings();
+
+updateModelUI();
+
+autoResize();
+
+checkOllama();
+
+promptInput.focus();
+
+</script>
+
+</body>
 </html>
