@@ -9,7 +9,7 @@
       name="description"
       content="A premium motivational quote experience."
     />
-
+    <link rel="icon" type="image/x-icon" href="qsvg.svg">
     <title>Sky Quote</title>
 
     <style>
@@ -1071,7 +1071,7 @@
             '<span class="quote-mark-hidden" aria-hidden="true"></span>' +
             escapeHTML(quote.quote);
 
-          authorElement.textContent =  (quote.author || "Unknown");
+          authorElement.textContent = quote.author || "Unknown";
         } catch (error) {
           console.error("Quote API error:", error);
 
