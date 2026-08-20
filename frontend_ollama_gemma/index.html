@@ -1,3521 +1,3239 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#212121">
-<title>Local AI — Ollama</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#202123" />
+    <title>Local AI — Ollama</title>
 
-<style>
-/* =========================================================
-   LOCAL AI — CHATGPT STYLE
+    <style>
+      /* =========================================================
+   LOCAL AI — CHATGPT-STYLE LOCAL OLLAMA CLIENT
 ========================================================= */
 
-:root{
-    --bg:#212121;
-    --bg-deep:#171717;
-    --sidebar:#171717;
-    --sidebar-hover:#2a2a2a;
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
 
-    --surface:#2f2f2f;
-    --surface-2:#303030;
-    --surface-3:#3a3a3a;
+      :root {
+        --bg: #17181a;
+        --bg-deep: #111214;
+        --sidebar: #121315;
+        --sidebar-2: #151619;
+        --surface: #202123;
+        --surface-2: #252629;
+        --surface-3: #2b2c2f;
 
-    --border:#3b3b3b;
-    --border-soft:#303030;
+        --border: rgba(255, 255, 255, 0.075);
+        --border-hover: rgba(255, 255, 255, 0.13);
 
-    --text:#ececec;
-    --text-2:#b7b7b7;
-    --text-3:#858585;
+        --text: #ececf0;
+        --text-2: #b7b7bd;
+        --text-3: #777980;
+        --text-4: #55575d;
 
-    --accent:#10a37f;
-    --accent-hover:#0d8f70;
+        --accent: #9b8cff;
+        --accent-2: #7c6ee8;
+        --green: #4fd1a5;
+        --red: #ed7b8a;
 
-    --danger:#ef6b73;
+        --sidebar-width: 278px;
+        --sidebar-mini: 68px;
 
-    --sidebar-width:260px;
+        --composer-width: 820px;
+        --content-width: 900px;
 
-    --radius:14px;
-    --ease:cubic-bezier(.2,.75,.25,1);
-}
+        --radius: 14px;
+        --ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+      }
 
-*,
-*::before,
-*::after{
-    box-sizing:border-box;
-}
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
 
-html,
-body{
-    width:100%;
-    height:100%;
-    margin:0;
-}
+      body {
+        overflow: hidden;
 
-body{
-    font-family:
-        Inter,
-        ui-sans-serif,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
+        background:
+          radial-gradient(
+            900px 600px at 75% -10%,
+            rgba(99, 85, 175, 0.1),
+            transparent 65%
+          ),
+          radial-gradient(
+            700px 600px at 15% 100%,
+            rgba(43, 125, 103, 0.06),
+            transparent 65%
+          ),
+          var(--bg);
 
-    background:var(--bg);
-    color:var(--text);
+        color: var(--text);
 
-    overflow:hidden;
-}
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
 
-/* =========================================================
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* =========================================================
    APP
 ========================================================= */
 
-.app{
-    width:100%;
-    height:100vh;
+      .app {
+        width: 100%;
+        height: 100vh;
 
-    display:flex;
+        display: flex;
 
-    background:var(--bg);
-}
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.012),
+          transparent 30%
+        );
+      }
 
-/* =========================================================
+      /* =========================================================
    SIDEBAR
 ========================================================= */
 
-.sidebar{
-    width:var(--sidebar-width);
-    min-width:var(--sidebar-width);
+      .sidebar {
+        position: relative;
 
-    height:100%;
+        width: var(--sidebar);
+        min-width: var(--sidebar);
+        height: 100%;
 
-    display:flex;
-    flex-direction:column;
+        display: flex;
+        flex-direction: column;
 
-    background:var(--sidebar);
+        background: linear-gradient(180deg, #131416, #111214);
 
-    border-right:1px solid #292929;
+        border-right: 1px solid rgba(255, 255, 255, 0.055);
 
-    transition:
-        transform .3s var(--ease),
-        width .3s var(--ease),
-        min-width .3s var(--ease);
-}
+        transition:
+          width 0.28s var(--ease),
+          min-width 0.28s var(--ease);
 
-.sidebar-top{
-    padding:12px;
-}
+        z-index: 30;
+      }
 
-.brand{
-    height:44px;
+      .sidebar.collapsed {
+        width: var(--sidebar-mini);
+        min-width: var(--sidebar-mini);
+      }
 
-    display:flex;
-    align-items:center;
-
-    gap:10px;
-
-    padding:0 10px;
-
-    color:var(--text);
-
-    font-size:15px;
-    font-weight:600;
-}
-
-.brand-icon{
-    width:28px;
-    height:28px;
-
-    display:grid;
-    place-items:center;
-
-    border-radius:8px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #10a37f,
-            #0b8065
-        );
-
-    color:white;
-}
-
-.brand-icon svg{
-    width:17px;
-    height:17px;
-}
-
-.new-chat{
-    width:100%;
-    height:46px;
-
-    display:flex;
-    align-items:center;
-
-    gap:10px;
-
-    padding:0 13px;
-
-    border:1px solid #373737;
-    border-radius:10px;
-
-    background:transparent;
-
-    color:var(--text);
-
-    font:inherit;
-    font-size:14px;
-
-    cursor:pointer;
-
-    transition:
-        background .18s ease,
-        border-color .18s ease;
-}
-
-.new-chat:hover{
-    background:var(--sidebar-hover);
-    border-color:#454545;
-}
-
-.new-chat svg{
-    width:18px;
-    height:18px;
-}
-
-/* =========================================================
-   CHAT HISTORY
+      /* =========================================================
+   SIDEBAR HEADER
 ========================================================= */
 
-.history{
-    flex:1;
+      .sidebar-header {
+        height: 64px;
+        min-height: 64px;
 
-    min-height:0;
+        padding: 10px;
 
-    overflow-y:auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    padding:5px 9px 15px;
-}
+      .brand {
+        min-width: 0;
+        flex: 1;
 
-.history-label{
-    padding:12px 10px 7px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
 
-    color:var(--text-3);
+        overflow: hidden;
+      }
 
-    font-size:11px;
-    font-weight:600;
+      .brand-logo {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
 
-    text-transform:uppercase;
-    letter-spacing:.06em;
-}
+        display: grid;
+        place-items: center;
 
-.history-item{
-    width:100%;
+        border-radius: 11px;
 
-    min-height:40px;
+        color: white;
 
-    display:flex;
-    align-items:center;
+        background: linear-gradient(145deg, #7768da, #4b9c83);
 
-    padding:9px 10px;
+        box-shadow: 0 8px 24px rgba(94, 80, 180, 0.22);
+      }
 
-    border:0;
-    border-radius:8px;
+      .brand-logo svg {
+        width: 22px;
+        height: 22px;
+      }
 
-    background:transparent;
+      .brand-copy {
+        min-width: 0;
 
-    color:#c9c9c9;
+        transition:
+          opacity 0.16s ease,
+          width 0.2s ease;
+      }
 
-    font:inherit;
-    font-size:13px;
+      .brand-name {
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
 
-    text-align:left;
+      .brand-status {
+        margin-top: 2px;
 
-    cursor:pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
 
-    overflow:hidden;
+        color: var(--text-3);
 
-    transition:background .15s ease;
-}
+        font-size: 10px;
+        white-space: nowrap;
+      }
 
-.history-item:hover{
-    background:var(--sidebar-hover);
-}
+      .status-dot {
+        width: 6px;
+        height: 6px;
 
-.history-item.active{
-    background:#2a2a2a;
-    color:white;
-}
+        border-radius: 50%;
 
-.history-item span{
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
+        background: var(--green);
 
-/* =========================================================
-   SIDEBAR BOTTOM
-========================================================= */
+        box-shadow: 0 0 0 3px rgba(79, 209, 165, 0.08);
+      }
 
-.sidebar-bottom{
-    padding:10px;
+      .collapse-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
 
-    border-top:1px solid #292929;
-}
+        display: grid;
+        place-items: center;
 
-.connection{
-    min-height:46px;
+        border: 1px solid transparent;
+        border-radius: 9px;
 
-    display:flex;
-    align-items:center;
+        background: transparent;
 
-    gap:10px;
+        color: var(--text-3);
 
-    padding:0 10px;
+        cursor: pointer;
 
-    border-radius:9px;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+      }
 
-    color:var(--text-2);
+      .collapse-btn:hover {
+        background: rgba(255, 255, 255, 0.065);
+        color: var(--text);
+      }
 
-    font-size:12px;
-}
+      .collapse-btn svg {
+        transition: transform 0.25s var(--ease);
+      }
 
-.connection-dot{
-    width:8px;
-    height:8px;
+      .sidebar.collapsed .collapse-btn svg {
+        transform: rotate(180deg);
+      }
 
-    border-radius:50%;
+      .sidebar.collapsed .brand-copy {
+        width: 0;
+        opacity: 0;
+        pointer-events: none;
+      }
 
-    background:#777;
+      .sidebar.collapsed .sidebar-header {
+        justify-content: center;
+      }
 
-    box-shadow:0 0 0 3px rgba(255,255,255,.03);
-}
+      .sidebar.collapsed .collapse-btn {
+        position: absolute;
+        top: 65px;
+        right: -17px;
 
-.connection.online .connection-dot{
-    background:#10a37f;
-    box-shadow:
-        0 0 0 3px rgba(16,163,127,.13),
-        0 0 10px rgba(16,163,127,.28);
-}
+        width: 32px;
+        height: 32px;
 
-.connection.offline .connection-dot{
-    background:#e16a6a;
-}
+        border: 1px solid var(--border);
 
-/* =========================================================
-   MAIN
-========================================================= */
+        background: #1d1e20;
 
-.main{
-    flex:1;
-    min-width:0;
+        z-index: 50;
+      }
 
-    height:100%;
-
-    display:flex;
-    flex-direction:column;
-
-    background:var(--bg);
-}
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.header{
-    height:58px;
-    min-height:58px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 18px;
-
-    border-bottom:1px solid #2b2b2b;
-
-    background:rgba(33,33,33,.92);
-
-    backdrop-filter:blur(14px);
-
-    z-index:5;
-}
-
-.header-left{
-    display:flex;
-    align-items:center;
-
-    min-width:0;
-}
-
-.mobile-menu{
-    display:none;
-
-    width:36px;
-    height:36px;
-
-    margin-right:8px;
-
-    border:0;
-    border-radius:8px;
-
-    background:transparent;
-
-    color:var(--text);
-
-    cursor:pointer;
-}
-
-.mobile-menu:hover{
-    background:#303030;
-}
-
-.model-button{
-    display:flex;
-    align-items:center;
-
-    gap:9px;
-
-    min-width:0;
-
-    padding:7px 9px;
-
-    border:0;
-    border-radius:8px;
-
-    background:transparent;
-
-    color:var(--text);
-
-    font:inherit;
-
-    cursor:pointer;
-}
-
-.model-button:hover{
-    background:#2b2b2b;
-}
-
-.model-name{
-    max-width:270px;
-
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-
-    font-size:14px;
-    font-weight:600;
-}
-
-.model-chevron{
-    color:#888;
-
-    font-size:11px;
-}
-
-.model-dot{
-    width:7px;
-    height:7px;
-
-    flex:none;
-
-    border-radius:50%;
-
-    background:#10a37f;
-
-    box-shadow:0 0 9px rgba(16,163,127,.5);
-}
-
-.header-actions{
-    display:flex;
-    align-items:center;
-
-    gap:5px;
-}
-
-.icon-btn{
-    width:36px;
-    height:36px;
-
-    display:grid;
-    place-items:center;
-
-    border:0;
-    border-radius:8px;
-
-    background:transparent;
-
-    color:#aaa;
-
-    cursor:pointer;
-}
-
-.icon-btn:hover{
-    background:#303030;
-    color:white;
-}
-
-.icon-btn svg{
-    width:18px;
-    height:18px;
-}
-
-/* =========================================================
-   CHAT AREA
-========================================================= */
-
-.chat{
-    flex:1;
-
-    min-height:0;
-
-    overflow-y:auto;
-
-    scroll-behavior:smooth;
-}
-
-.chat-inner{
-    width:100%;
-}
-
-.welcome{
-    width:min(900px,calc(100% - 40px));
-
-    min-height:calc(100vh - 210px);
-
-    margin:auto;
-
-    padding:90px 20px 120px;
-
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-
-    text-align:center;
-}
-
-.welcome-mark{
-    width:54px;
-    height:54px;
-
-    display:grid;
-    place-items:center;
-
-    margin-bottom:28px;
-
-    border:1px solid #414141;
-    border-radius:16px;
-
-    background:#292929;
-
-    box-shadow:
-        0 10px 40px rgba(0,0,0,.25);
-}
-
-.welcome-mark svg{
-    width:29px;
-    height:29px;
-
-    color:#ddd;
-}
-
-.welcome h1{
-    margin:0;
-
-    font-size:clamp(30px,4vw,42px);
-
-    line-height:1.1;
-
-    font-weight:600;
-
-    letter-spacing:-.035em;
-}
-
-.welcome p{
-    max-width:610px;
-
-    margin:16px 0 0;
-
-    color:var(--text-2);
-
-    font-size:15px;
-
-    line-height:1.65;
-}
-
-/* =========================================================
-   SUGGESTIONS
-========================================================= */
-
-.suggestions{
-    width:min(780px,100%);
-
-    margin-top:45px;
-
-    display:grid;
-
-    grid-template-columns:repeat(2,1fr);
-
-    gap:10px;
-}
-
-.suggestion{
-    min-height:88px;
-
-    padding:16px;
-
-    border:1px solid #3b3b3b;
-    border-radius:12px;
-
-    background:#292929;
-
-    color:var(--text);
-
-    text-align:left;
-
-    cursor:pointer;
-
-    transition:
-        background .18s ease,
-        border-color .18s ease,
-        transform .18s var(--ease);
-}
-
-.suggestion:hover{
-    background:#303030;
-    border-color:#4b4b4b;
-
-    transform:translateY(-1px);
-}
-
-.suggestion-title{
-    font-size:13px;
-    font-weight:600;
-}
-
-.suggestion-text{
-    margin-top:7px;
-
-    color:#8f8f8f;
-
-    font-size:12px;
-    line-height:1.4;
-}
-
-/* =========================================================
-   MESSAGES
-========================================================= */
-
-.messages{
-    padding:25px 0 150px;
-}
-
-.message{
-    width:100%;
-
-    display:flex;
-
-    padding:18px max(20px,calc((100% - 900px)/2));
-
-    animation:messageIn .22s ease;
-}
-
-@keyframes messageIn{
-    from{
-        opacity:0;
-        transform:translateY(5px);
-    }
-
-    to{
-        opacity:1;
-        transform:none;
-    }
-}
-
-.message.user{
-    background:transparent;
-}
-
-.message.assistant{
-    background:#2f2f2f;
-    border-top:1px solid rgba(255,255,255,.025);
-    border-bottom:1px solid rgba(0,0,0,.08);
-}
-
-.message-row{
-    width:100%;
-
-    display:flex;
-
-    gap:16px;
-
-    min-width:0;
-}
-
-.message-avatar{
-    width:30px;
-    height:30px;
-
-    min-width:30px;
-
-    display:grid;
-    place-items:center;
-
-    margin-top:1px;
-
-    border-radius:7px;
-
-    background:#10a37f;
-
-    color:white;
-}
-
-.message.user .message-avatar{
-    background:#555;
-}
-
-.message-avatar svg{
-    width:17px;
-    height:17px;
-}
-
-.message-body{
-    min-width:0;
-
-    flex:1;
-}
-
-.message-role{
-    margin-bottom:5px;
-
-    font-size:13px;
-    font-weight:600;
-
-    color:#f0f0f0;
-}
-
-.message-text{
-    max-width:760px;
-
-    color:#ececec;
-
-    font-size:15px;
-
-    line-height:1.7;
-
-    overflow-wrap:anywhere;
-}
-
-.message.user .message-text{
-    color:#eee;
-}
-
-.message-text p{
-    margin:0 0 14px;
-}
-
-.message-text p:last-child{
-    margin-bottom:0;
-}
-
-.message-text h1,
-.message-text h2,
-.message-text h3{
-    margin:20px 0 9px;
-
-    line-height:1.3;
-}
-
-.message-text h1{
-    font-size:24px;
-}
-
-.message-text h2{
-    font-size:20px;
-}
-
-.message-text h3{
-    font-size:17px;
-}
-
-.message-text ul,
-.message-text ol{
-    margin:8px 0 15px;
-
-    padding-left:24px;
-}
-
-.message-text li{
-    margin:5px 0;
-}
-
-.message-text strong{
-    font-weight:650;
-}
-
-.inline-code{
-    padding:2px 5px;
-
-    border-radius:5px;
-
-    background:#1d1d1d;
-
-    color:#e6e6e6;
-
-    font-family:
-        ui-monospace,
-        SFMono-Regular,
-        Menlo,
-        Monaco,
-        Consolas,
-        monospace;
-
-    font-size:.88em;
-}
-
-.code-wrap{
-    margin:15px 0;
-
-    border:1px solid #454545;
-    border-radius:10px;
-
-    overflow:hidden;
-
-    background:#181818;
-}
-
-.code-header{
-    height:35px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 10px;
-
-    border-bottom:1px solid #303030;
-
-    color:#888;
-
-    font-size:11px;
-}
-
-.copy-code{
-    border:0;
-    border-radius:6px;
-
-    padding:4px 7px;
-
-    background:#292929;
-
-    color:#aaa;
-
-    font-size:11px;
-
-    cursor:pointer;
-}
-
-.copy-code:hover{
-    background:#383838;
-    color:white;
-}
-
-.code-wrap pre{
-    margin:0;
-
-    padding:15px;
-
-    overflow-x:auto;
-
-    color:#e6e6e6;
-
-    font-family:
-        ui-monospace,
-        SFMono-Regular,
-        Menlo,
-        Monaco,
-        Consolas,
-        monospace;
-
-    font-size:13px;
-
-    line-height:1.6;
-}
-
-.code-wrap code{
-    font-family:inherit;
-}
-
-.message-actions{
-    display:flex;
-
-    gap:3px;
-
-    margin-top:9px;
-}
-
-.message-action{
-    width:30px;
-    height:28px;
-
-    display:grid;
-    place-items:center;
-
-    border:0;
-    border-radius:7px;
-
-    background:transparent;
-
-    color:#777;
-
-    cursor:pointer;
-}
-
-.message-action:hover{
-    background:#3a3a3a;
-    color:#ccc;
-}
-
-/* =========================================================
-   TYPING
-========================================================= */
-
-.typing{
-    display:flex;
-    align-items:center;
-
-    gap:4px;
-
-    height:25px;
-}
-
-.typing span{
-    width:6px;
-    height:6px;
-
-    border-radius:50%;
-
-    background:#aaa;
-
-    animation:typing 1.2s infinite ease-in-out;
-}
-
-.typing span:nth-child(2){
-    animation-delay:.15s;
-}
-
-.typing span:nth-child(3){
-    animation-delay:.3s;
-}
-
-@keyframes typing{
-    0%,60%,100%{
-        transform:translateY(0);
-        opacity:.35;
-    }
-
-    30%{
-        transform:translateY(-4px);
-        opacity:1;
-    }
-}
-
-/* =========================================================
-   COMPOSER
-========================================================= */
-
-.composer-area{
-    position:relative;
-
-    padding:
-        12px
-        max(16px,calc((100% - 940px)/2))
-        14px;
-
-    background:
-        linear-gradient(
-            to top,
-            var(--bg) 70%,
-            rgba(33,33,33,0)
-        );
-}
-
-.composer{
-    position:relative;
-
-    display:flex;
-    align-items:flex-end;
-
-    min-height:58px;
-
-    padding:8px 8px 8px 16px;
-
-    border:1px solid #4a4a4a;
-    border-radius:16px;
-
-    background:#2f2f2f;
-
-    box-shadow:
-        0 6px 25px rgba(0,0,0,.20);
-
-    transition:
-        border-color .2s ease,
-        box-shadow .2s ease;
-}
-
-.composer:focus-within{
-    border-color:#666;
-
-    box-shadow:
-        0 7px 30px rgba(0,0,0,.28);
-}
-
-textarea{
-    flex:1;
-
-    min-width:0;
-
-    height:40px;
-    max-height:180px;
-
-    padding:9px 0;
-
-    resize:none;
-
-    border:0;
-    outline:0;
-
-    background:transparent;
-
-    color:#eee;
-
-    font:inherit;
-    font-size:15px;
-
-    line-height:1.5;
-}
-
-textarea::placeholder{
-    color:#777;
-}
-
-.send-button{
-    width:40px;
-    height:40px;
-
-    min-width:40px;
-
-    display:grid;
-    place-items:center;
-
-    border:0;
-    border-radius:10px;
-
-    background:#ececec;
-
-    color:#171717;
-
-    cursor:pointer;
-
-    transition:
-        transform .15s ease,
-        background .15s ease,
-        opacity .15s ease;
-}
-
-.send-button:hover{
-    background:white;
-
-    transform:translateY(-1px);
-}
-
-.send-button.stop{
-    background:#ef6b73;
-    color:white;
-}
-
-.send-button:disabled{
-    opacity:.4;
-    cursor:default;
-    transform:none;
-}
-
-.composer-bottom{
-    display:flex;
-    justify-content:space-between;
-
-    margin-top:7px;
-
-    padding:0 4px;
-
-    color:#666;
-
-    font-size:10px;
-}
-
-.composer-model{
-    color:#777;
-}
-
-/* =========================================================
-   SETTINGS PANEL
-========================================================= */
-
-.settings-overlay{
-    position:fixed;
-    inset:0;
-
-    z-index:50;
-
-    background:rgba(0,0,0,.48);
-
-    opacity:0;
-    pointer-events:none;
-
-    transition:opacity .2s ease;
-}
-
-.settings-overlay.open{
-    opacity:1;
-    pointer-events:auto;
-}
-
-.settings{
-    position:absolute;
-
-    top:50%;
-    left:50%;
-
-    width:min(500px,calc(100% - 30px));
-    max-height:min(700px,calc(100vh - 40px));
-
-    overflow-y:auto;
-
-    transform:
-        translate(-50%,-48%)
-        scale(.98);
-
-    border:1px solid #444;
-    border-radius:16px;
-
-    background:#252525;
-
-    box-shadow:
-        0 30px 90px rgba(0,0,0,.55);
-
-    transition:transform .2s var(--ease);
-}
-
-.settings-overlay.open .settings{
-    transform:
-        translate(-50%,-50%)
-        scale(1);
-}
-
-.settings-head{
-    height:60px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 18px;
-
-    border-bottom:1px solid #383838;
-}
-
-.settings-title{
-    font-size:16px;
-    font-weight:600;
-}
-
-.settings-body{
-    padding:18px;
-}
-
-.setting{
-    margin-bottom:20px;
-}
-
-.setting:last-child{
-    margin-bottom:0;
-}
-
-.setting-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-
-    margin-bottom:8px;
-}
-
-.setting-name{
-    font-size:13px;
-    font-weight:550;
-}
-
-.setting-value{
-    padding:3px 7px;
-
-    border-radius:5px;
-
-    background:#333;
-
-    color:#aaa;
-
-    font-size:11px;
-
-    font-family:monospace;
-}
-
-.setting-description{
-    margin-top:5px;
-
-    color:#777;
-
-    font-size:11px;
-    line-height:1.45;
-}
-
-input[type="range"]{
-    width:100%;
-
-    accent-color:#10a37f;
-
-    cursor:pointer;
-}
-
-input[type="number"]{
-    width:100%;
-    height:38px;
-
-    padding:0 10px;
-
-    border:1px solid #444;
-    border-radius:8px;
-
-    outline:none;
-
-    background:#1d1d1d;
-
-    color:#eee;
-
-    font:inherit;
-    font-size:13px;
-}
-
-input[type="number"]:focus{
-    border-color:#666;
-}
-
-.model-meta{
-    padding:13px;
-
-    border:1px solid #3b3b3b;
-    border-radius:10px;
-
-    background:#1d1d1d;
-}
-
-.meta-row{
-    display:flex;
-    justify-content:space-between;
-
-    gap:20px;
-
-    padding:7px 0;
-
-    border-bottom:1px solid #292929;
-
-    font-size:11px;
-}
-
-.meta-row:last-child{
-    border-bottom:0;
-}
-
-.meta-key{
-    color:#777;
-}
-
-.meta-value{
-    max-width:65%;
-
-    color:#bbb;
-
-    text-align:right;
-
-    overflow-wrap:anywhere;
-}
-
-.close-settings{
-    width:32px;
-    height:32px;
-
-    display:grid;
-    place-items:center;
-
-    border:0;
-    border-radius:7px;
-
-    background:transparent;
-
-    color:#999;
-
-    cursor:pointer;
-}
-
-.close-settings:hover{
-    background:#333;
-    color:white;
-}
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-.toast{
-    position:fixed;
-
-    left:50%;
-    bottom:90px;
-
-    z-index:100;
-
-    transform:
-        translate(-50%,10px);
-
-    padding:9px 13px;
-
-    border:1px solid #444;
-    border-radius:8px;
-
-    background:#303030;
-
-    color:#ddd;
-
-    font-size:12px;
-
-    box-shadow:
-        0 10px 35px rgba(0,0,0,.35);
-
-    opacity:0;
-    pointer-events:none;
-
-    transition:
-        opacity .2s ease,
-        transform .2s ease;
-}
-
-.toast.show{
-    opacity:1;
-
-    transform:
-        translate(-50%,0);
-}
-
-/* =========================================================
-   SCROLLBAR
-========================================================= */
-
-*{
-    scrollbar-width:thin;
-    scrollbar-color:#444 transparent;
-}
-
-::-webkit-scrollbar{
-    width:8px;
-}
-
-::-webkit-scrollbar-track{
-    background:transparent;
-}
-
-::-webkit-scrollbar-thumb{
-    background:#444;
-    border-radius:10px;
-}
-
-::-webkit-scrollbar-thumb:hover{
-    background:#555;
-}
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-.mobile-overlay{
-    display:none;
-
-    position:fixed;
-    inset:0;
-
-    z-index:20;
-
-    background:rgba(0,0,0,.55);
-
-    opacity:0;
-    pointer-events:none;
-
-    transition:opacity .2s ease;
-}
-
-@media(max-width:800px){
-
-    .sidebar{
-        position:fixed;
-
-        z-index:30;
-
-        top:0;
-        bottom:0;
-        left:0;
-
-        transform:translateX(-100%);
-
-        box-shadow:
-            20px 0 60px rgba(0,0,0,.35);
-    }
-
-    .sidebar.open{
-        transform:translateX(0);
-    }
-
-    .mobile-overlay{
-        display:block;
-    }
-
-    .mobile-overlay.open{
-        opacity:1;
-        pointer-events:auto;
-    }
-
-    .mobile-menu{
-        display:grid;
-        place-items:center;
-    }
-
-    .header{
-        padding:0 10px;
-    }
-
-    .model-name{
-        max-width:170px;
-    }
-
-    .suggestions{
-        grid-template-columns:1fr;
-    }
-
-    .welcome{
-        padding-top:65px;
-    }
-
-    .message{
-        padding-left:15px;
-        padding-right:15px;
-    }
-
-    .message-row{
-        gap:11px;
-    }
-
-    .message-text{
-        font-size:14px;
-    }
-
-    .composer-area{
-        padding-left:10px;
-        padding-right:10px;
-    }
-
-    .composer-bottom{
-        display:none;
-    }
-}
-
-@media(max-width:480px){
-
-    .welcome{
-        width:100%;
-
-        padding-left:15px;
-        padding-right:15px;
-    }
-
-    .welcome h1{
-        font-size:29px;
-    }
-
-    .welcome p{
-        font-size:14px;
-    }
-
-    .suggestions{
-        margin-top:30px;
-    }
-
-    .suggestion{
-        min-height:74px;
-    }
-
-    .message-avatar{
-        width:27px;
-        height:27px;
-        min-width:27px;
-    }
-}
-
-.hidden{
-    display:none!important;
-}
-</style>
-</head>
-
-<body>
-
-<div class="app">
-
-<!-- =======================================================
-     SIDEBAR
-======================================================= -->
-
-<aside class="sidebar" id="sidebar">
-
-    <div class="sidebar-top">
-
-        <div class="brand">
-
-            <div class="brand-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path
-                        d="M12 3.5c1.8 0 2.8 1.8 4 2.5
-                        1.2.7 3.3.3 4.2 1.8
-                        .9 1.5-.3 2.9-.5 4.2
-                        -.2 1.4 1 3.1-.2 4.3
-                        -1.2 1.2-2.8.1-4.2.5
-                        -1.4.4-2.5 2.1-4 1.6
-                        -1.5-.5-1.5-2.4-2.4-3.4
-                        -.9-1-2.9-1.1-3.3-2.7
-                        -.4-1.5 1.2-2.5 1.3-3.9
-                        .1-1.5-1-3-.1-4.2
-                        .9-1.2 2.8-.8 4-1.5
-                        1.2-.7 1.4-3.2 3.2-3.2Z"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                    />
-                    <circle
-                        cx="12"
-                        cy="12"
-                        r="2"
-                        fill="currentColor"
-                    />
-                </svg>
-            </div>
-
-            <span>Local AI</span>
-
-        </div>
-
-        <button class="new-chat" id="newChat">
-            <svg viewBox="0 0 24 24" fill="none">
-                <path
-                    d="M12 5v14M5 12h14"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                />
-            </svg>
-            <span>New chat</span>
-        </button>
-
-    </div>
-
-
-    <div class="history">
-
-        <div class="history-label">
-            Conversations
-        </div>
-
-        <div id="historyList"></div>
-
-    </div>
-
-
-    <div class="sidebar-bottom">
-
-        <div
-            class="connection"
-            id="connection"
-        >
-            <span class="connection-dot"></span>
-            <span id="connectionText">
-                Connecting to Ollama…
-            </span>
-        </div>
-
-    </div>
-
-</aside>
-
-
-<div
-    class="mobile-overlay"
-    id="mobileOverlay"
-></div>
-
-
-<!-- =======================================================
-     MAIN
-======================================================= -->
-
-<main class="main">
-
-    <header class="header">
-
-        <div class="header-left">
-
-            <button
-                class="mobile-menu"
-                id="mobileMenu"
-                aria-label="Open sidebar"
-            >
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path
-                        d="M4 6h16M4 12h16M4 18h16"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    />
-                </svg>
-            </button>
-
-
-            <button
-                class="model-button"
-                id="modelButton"
-            >
-
-                <span class="model-dot"></span>
-
-                <span
-                    class="model-name"
-                    id="modelName"
-                >
-                    Gemma 3 · 1B
-                </span>
-
-                <span class="model-chevron">
-                    ▾
-                </span>
-
-            </button>
-
-        </div>
-
-
-        <div class="header-actions">
-
-            <button
-                class="icon-btn"
-                id="settingsButton"
-                title="Model settings"
-            >
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path
-                        d="M12 15.2a3.2 3.2 0 1 0 0-6.4
-                        3.2 3.2 0 0 0 0 6.4Z"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                    />
-                    <path
-                        d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.8 1.8-.06-.06a1.7 1.7 0 0 0-1.88-.34
-                        1.7 1.7 0 0 0-1.03 1.56V20h-2.55v-.1a1.7 1.7 0 0 0-1.03-1.56
-                        1.7 1.7 0 0 0-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 0 0 8.1 15
-                        1.7 1.7 0 0 0 6.54 14H6.45v-2.55h.09A1.7 1.7 0 0 0 8.1 10
-                        1.7 1.7 0 0 0 7.76 8.1L7.7 8.04l1.8-1.8.06.06A1.7 1.7 0 0 0 11.44 6
-                        1.7 1.7 0 0 0 12.47 4.44V4h2.55v.44A1.7 1.7 0 0 0 16.05 6
-                        1.7 1.7 0 0 0 17.93 6.3l.06-.06 1.8 1.8-.06.06A1.7 1.7 0 0 0 19.4 10
-                        1.7 1.7 0 0 0 20.96 11.45h.09V14h-.09A1.7 1.7 0 0 0 19.4 15Z"
-                        stroke="currentColor"
-                        stroke-width="1.2"
-                    />
-                </svg>
-            </button>
-
-        </div>
-
-    </header>
-
-
-    <!-- ===================================================
-         CHAT
-    ==================================================== -->
-
-    <section
-        class="chat"
-        id="chat"
-    >
-
-        <div class="chat-inner">
-
-            <div
-                class="welcome"
-                id="welcome"
-            >
-
-                <div class="welcome-mark">
-
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path
-                            d="M12 3.5c1.8 0 2.8 1.8 4 2.5
-                            1.2.7 3.3.3 4.2 1.8
-                            .9 1.5-.3 2.9-.5 4.2
-                            -.2 1.4 1 3.1-.2 4.3
-                            -1.2 1.2-2.8.1-4.2.5
-                            -1.4.4-2.5 2.1-4 1.6
-                            -1.5-.5-1.5-2.4-2.4-3.4
-                            -.9-1-2.9-1.1-3.3-2.7
-                            -.4-1.5 1.2-2.5 1.3-3.9
-                            .1-1.5-1-3-.1-4.2
-                            .9-1.2 2.8-.8 4-1.5
-                            1.2-.7 1.4-3.2 3.2-3.2Z"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                        />
-
-                        <circle
-                            cx="12"
-                            cy="12"
-                            r="2"
-                            fill="currentColor"
-                        />
-                    </svg>
-
-                </div>
-
-
-                <h1>
-                    How can I help you today?
-                </h1>
-
-
-                <p>
-                    Your AI runs locally through Ollama.
-                    Your conversations stay on your machine.
-                </p>
-
-
-                <div class="suggestions">
-
-                    <button
-                        class="suggestion"
-                        data-prompt="Explain how HTTP works like I'm a complete beginner."
-                    >
-                        <div class="suggestion-title">
-                            Explain something
-                        </div>
-
-                        <div class="suggestion-text">
-                            Turn a complicated concept into something simple.
-                        </div>
-                    </button>
-
-
-                    <button
-                        class="suggestion"
-                        data-prompt="Give me three interesting programming projects I can build this weekend."
-                    >
-                        <div class="suggestion-title">
-                            Brainstorm ideas
-                        </div>
-
-                        <div class="suggestion-text">
-                            Find something useful and fun to build.
-                        </div>
-                    </button>
-
-
-                    <button
-                        class="suggestion"
-                        data-prompt="Write a clean JavaScript function that demonstrates recursion and explain how it works."
-                    >
-                        <div class="suggestion-title">
-                            Write some code
-                        </div>
-
-                        <div class="suggestion-text">
-                            Build it and explain the important parts.
-                        </div>
-                    </button>
-
-
-                    <button
-                        class="suggestion"
-                        data-prompt="Teach me one fascinating computer science concept."
-                    >
-                        <div class="suggestion-title">
-                            Learn something new
-                        </div>
-
-                        <div class="suggestion-text">
-                            Give me an interesting rabbit hole.
-                        </div>
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div
-                class="messages hidden"
-                id="messages"
-            ></div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         COMPOSER
-    ==================================================== -->
-
-    <div class="composer-area">
-
-        <div class="composer">
-
-            <textarea
-                id="prompt"
-                rows="1"
-                placeholder="Message your local AI..."
-                aria-label="Message your local AI"
-            ></textarea>
-
-
-            <button
-                class="send-button"
-                id="sendButton"
-                aria-label="Send"
-            >
-
-                <svg
-                    id="sendSvg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    width="18"
-                    height="18"
-                >
-                    <path
-                        d="M12 19V5"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                    />
-
-                    <path
-                        d="M6 11l6-6 6 6"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-
-            </button>
-
-        </div>
-
-
-        <div class="composer-bottom">
-
-            <span>
-                Enter to send · Shift + Enter for newline
-            </span>
-
-            <span
-                class="composer-model"
-                id="composerModel"
-            >
-                Gemma 3
-            </span>
-
-        </div>
-
-    </div>
-
-</main>
-
-</div>
-
-
-<!-- =======================================================
-     SETTINGS
-======================================================= -->
-
-<div
-    class="settings-overlay"
-    id="settingsOverlay"
->
-
-    <div class="settings">
-
-        <div class="settings-head">
-
-            <div class="settings-title">
-                Model parameters
-            </div>
-
-            <button
-                class="close-settings"
-                id="closeSettings"
-            >
-                ×
-            </button>
-
-        </div>
-
-
-        <div class="settings-body">
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Temperature
-                    </span>
-
-                    <span
-                        class="setting-value"
-                        id="temperatureValue"
-                    >
-                        0.7
-                    </span>
-                </div>
-
-                <input
-                    id="temperature"
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value="0.7"
-                >
-
-                <div class="setting-description">
-                    Controls randomness. Lower values are more predictable.
-                </div>
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Top P
-                    </span>
-
-                    <span
-                        class="setting-value"
-                        id="topPValue"
-                    >
-                        0.9
-                    </span>
-                </div>
-
-                <input
-                    id="topP"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value="0.9"
-                >
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Top K
-                    </span>
-
-                    <span
-                        class="setting-value"
-                        id="topKValue"
-                    >
-                        40
-                    </span>
-                </div>
-
-                <input
-                    id="topK"
-                    type="range"
-                    min="1"
-                    max="100"
-                    step="1"
-                    value="40"
-                >
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Min P
-                    </span>
-
-                    <span
-                        class="setting-value"
-                        id="minPValue"
-                    >
-                        0.05
-                    </span>
-                </div>
-
-                <input
-                    id="minP"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value="0.05"
-                >
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Repeat penalty
-                    </span>
-
-                    <span
-                        class="setting-value"
-                        id="repeatValue"
-                    >
-                        1.1
-                    </span>
-                </div>
-
-                <input
-                    id="repeatPenalty"
-                    type="range"
-                    min="0.5"
-                    max="2"
-                    step="0.05"
-                    value="1.1"
-                >
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Context size
-                    </span>
-                </div>
-
-                <input
-                    id="contextSize"
-                    type="number"
-                    min="512"
-                    max="131072"
-                    step="512"
-                    value="8192"
-                >
-
-                <div class="setting-description">
-                    Number of tokens available to the conversation.
-                </div>
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Maximum output
-                    </span>
-                </div>
-
-                <input
-                    id="maxTokens"
-                    type="number"
-                    min="128"
-                    max="32768"
-                    step="128"
-                    value="4096"
-                >
-
-            </div>
-
-
-            <div class="setting">
-
-                <div class="setting-top">
-                    <span class="setting-name">
-                        Model information
-                    </span>
-                </div>
-
-                <div
-                    class="model-meta"
-                    id="modelMeta"
-                >
-                    Loading model information…
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<div
-    class="toast"
-    id="toast"
->
-    Copied
-</div>
-
-
-<script>
-/* =========================================================
-   CONFIG
-========================================================= */
-
-const OLLAMA_API =
-    "http://localhost:11434";
-
-
-const CHAT_API =
-    `${OLLAMA_API}/api/chat`;
-
-
-const SHOW_API =
-    `${OLLAMA_API}/api/show`;
-
-
-const TAGS_API =
-    `${OLLAMA_API}/api/tags`;
-
-
-/* =========================================================
-   ELEMENTS
-========================================================= */
-
-const sidebar =
-    document.getElementById("sidebar");
-
-const mobileMenu =
-    document.getElementById("mobileMenu");
-
-const mobileOverlay =
-    document.getElementById("mobileOverlay");
-
-const newChat =
-    document.getElementById("newChat");
-
-const historyList =
-    document.getElementById("historyList");
-
-const chat =
-    document.getElementById("chat");
-
-const welcome =
-    document.getElementById("welcome");
-
-const messages =
-    document.getElementById("messages");
-
-const promptInput =
-    document.getElementById("prompt");
-
-const sendButton =
-    document.getElementById("sendButton");
-
-const sendSvg =
-    document.getElementById("sendSvg");
-
-const modelName =
-    document.getElementById("modelName");
-
-const composerModel =
-    document.getElementById("composerModel");
-
-const connection =
-    document.getElementById("connection");
-
-const connectionText =
-    document.getElementById("connectionText");
-
-const settingsButton =
-    document.getElementById("settingsButton");
-
-const settingsOverlay =
-    document.getElementById("settingsOverlay");
-
-const closeSettings =
-    document.getElementById("closeSettings");
-
-const modelMeta =
-    document.getElementById("modelMeta");
-
-const toast =
-    document.getElementById("toast");
-
-
-/* =========================================================
-   PARAMETERS
-========================================================= */
-
-const temperature =
-    document.getElementById("temperature");
-
-const topP =
-    document.getElementById("topP");
-
-const topK =
-    document.getElementById("topK");
-
-const minP =
-    document.getElementById("minP");
-
-const repeatPenalty =
-    document.getElementById("repeatPenalty");
-
-const contextSize =
-    document.getElementById("contextSize");
-
-const maxTokens =
-    document.getElementById("maxTokens");
-
-
-const temperatureValue =
-    document.getElementById("temperatureValue");
-
-const topPValue =
-    document.getElementById("topPValue");
-
-const topKValue =
-    document.getElementById("topKValue");
-
-const minPValue =
-    document.getElementById("minPValue");
-
-const repeatValue =
-    document.getElementById("repeatValue");
-
-
-/* =========================================================
-   STATE
-========================================================= */
-
-let selectedModel =
-    localStorage.getItem("local-ai-model")
-    || "gemma3:1b";
-
-
-let conversation = [];
-
-let isGenerating = false;
-
-let abortController = null;
-
-let currentAssistantElement = null;
-
-let modelInformation = null;
-
-
-/* =========================================================
-   MODEL LABEL
-========================================================= */
-
-function prettyModelName(model){
-
-    if(!model)
-        return "Local model";
-
-    const names = {
-
-        "gemma3:1b":
-            "Gemma 3 · 1B",
-
-        "gemma3:4b":
-            "Gemma 3 · 4B",
-
-        "gemma3:12b":
-            "Gemma 3 · 12B",
-
-        "gemma3:27b":
-            "Gemma 3 · 27B",
-
-        "qwen2.5:7b":
-            "Qwen 2.5 · 7B",
-
-        "qwen2.5-coder:7b":
-            "Qwen 2.5 Coder · 7B"
-    };
-
-    return names[model]
-        || model
-            .replace(/:/g," · ")
-            .replace(/-/g," ");
-}
-
-
-function updateModelUI(){
-
-    const name =
-        prettyModelName(selectedModel);
-
-    modelName.textContent =
-        name;
-
-    composerModel.textContent =
-        name;
-
-    localStorage.setItem(
-        "local-ai-model",
-        selectedModel
-    );
-}
-
-
-/* =========================================================
-   OLLAMA CONNECTION
-========================================================= */
-
-async function checkOllama(){
-
-    try{
-
-        const response =
-            await fetch(
-                TAGS_API,
-                {
-                    method:"GET"
-                }
-            );
-
-        if(!response.ok)
-            throw new Error();
-
-        connection.classList.add("online");
-        connection.classList.remove("offline");
-
-        connectionText.textContent =
-            "Ollama connected";
-
-        await loadModels();
-
-        await loadModelInformation();
-
-    }catch(error){
-
-        connection.classList.remove("online");
-        connection.classList.add("offline");
-
-        connectionText.textContent =
-            "Ollama unavailable";
-
-        modelMeta.innerHTML = `
-            <div style="color:#e16a6a">
-                Cannot connect to Ollama.
-            </div>
-            <div style="margin-top:7px;color:#777">
-                Start Ollama and refresh this page.
-            </div>
-        `;
-    }
-}
-
-
-/* =========================================================
-   LOAD MODELS
-========================================================= */
-
-async function loadModels(){
-
-    try{
-
-        const response =
-            await fetch(TAGS_API);
-
-        const data =
-            await response.json();
-
-        const models =
-            data.models || [];
-
-        if(!models.length)
-            return;
-
-        const exists =
-            models.some(
-                m => m.name === selectedModel
-            );
-
-        if(!exists){
-
-            const gemma =
-                models.find(
-                    m =>
-                        m.name
-                        .toLowerCase()
-                        .includes("gemma")
-                );
-
-            selectedModel =
-                gemma?.name
-                || models[0].name;
-
-            updateModelUI();
-        }
-
-    }catch(error){
-
-        console.warn(
-            "Could not load Ollama models",
-            error
-        );
-    }
-}
-
-
-/* =========================================================
-   MODEL INFORMATION
-========================================================= */
-
-async function loadModelInformation(){
-
-    modelMeta.innerHTML =
-        `<div style="color:#777">Loading model information…</div>`;
-
-    try{
-
-        const response =
-            await fetch(
-                SHOW_API,
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            model:selectedModel
-                        })
-                }
-            );
-
-        if(!response.ok)
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        modelInformation =
-            await response.json();
-
-        renderModelInformation();
-
-    }catch(error){
-
-        modelMeta.innerHTML = `
-            <div style="color:#777">
-                Metadata unavailable for
-                <strong>${escapeHTML(selectedModel)}</strong>.
-            </div>
-        `;
-    }
-}
-
-
-function renderModelInformation(){
-
-    if(!modelInformation){
-
-        modelMeta.textContent =
-            "No model information.";
-
-        return;
-    }
-
-    const details =
-        modelInformation.details || {};
-
-    const parameters =
-        modelInformation.parameters || "";
-
-    const template =
-        modelInformation.template
-        ? "Available"
-        : "Not exposed";
-
-
-    const rows = [
-
-        [
-            "Model",
-            selectedModel
-        ],
-
-        [
-            "Family",
-            details.family || "—"
-        ],
-
-        [
-            "Parameter size",
-            details.parameter_size || "—"
-        ],
-
-        [
-            "Quantization",
-            details.quantization_level || "—"
-        ],
-
-        [
-            "Format",
-            details.format || "—"
-        ],
-
-        [
-            "Template",
-            template
-        ],
-
-        [
-            "Parameters",
-            parameters
-                ? "Model parameters available"
-                : "Not exposed"
-        ]
-    ];
-
-
-    modelMeta.innerHTML =
-        rows
-            .map(
-                ([key,value]) => `
-                    <div class="meta-row">
-                        <span class="meta-key">
-                            ${escapeHTML(key)}
-                        </span>
-
-                        <span class="meta-value">
-                            ${escapeHTML(String(value))}
-                        </span>
-                    </div>
-                `
-            )
-            .join("");
-}
-
-
-/* =========================================================
-   SETTINGS
-========================================================= */
-
-function bindRange(
-    element,
-    output,
-    decimals=2
-){
-
-    element.addEventListener(
-        "input",
-        () => {
-
-            output.textContent =
-                Number(
-                    element.value
-                ).toFixed(decimals);
-
-            saveSettings();
-
-        }
-    );
-}
-
-
-bindRange(
-    temperature,
-    temperatureValue,
-    2
-);
-
-bindRange(
-    topP,
-    topPValue,
-    2
-);
-
-bindRange(
-    topK,
-    topKValue,
-    0
-);
-
-bindRange(
-    minP,
-    minPValue,
-    2
-);
-
-bindRange(
-    repeatPenalty,
-    repeatValue,
-    2
-);
-
-
-[
-    contextSize,
-    maxTokens
-].forEach(
-    input => {
-
-        input.addEventListener(
-            "input",
-            saveSettings
-        );
-
-    }
-);
-
-
-function saveSettings(){
-
-    const settings = {
-
-        temperature:
-            Number(temperature.value),
-
-        topP:
-            Number(topP.value),
-
-        topK:
-            Number(topK.value),
-
-        minP:
-            Number(minP.value),
-
-        repeatPenalty:
-            Number(repeatPenalty.value),
-
-        contextSize:
-            Number(contextSize.value),
-
-        maxTokens:
-            Number(maxTokens.value)
-    };
-
-    localStorage.setItem(
-        "local-ai-settings",
-        JSON.stringify(settings)
-    );
-}
-
-
-function loadSettings(){
-
-    try{
-
-        const raw =
-            localStorage.getItem(
-                "local-ai-settings"
-            );
-
-        if(!raw)
-            return;
-
-        const s =
-            JSON.parse(raw);
-
-        if(s.temperature != null)
-            temperature.value =
-                s.temperature;
-
-        if(s.topP != null)
-            topP.value =
-                s.topP;
-
-        if(s.topK != null)
-            topK.value =
-                s.topK;
-
-        if(s.minP != null)
-            minP.value =
-                s.minP;
-
-        if(s.repeatPenalty != null)
-            repeatPenalty.value =
-                s.repeatPenalty;
-
-        if(s.contextSize != null)
-            contextSize.value =
-                s.contextSize;
-
-        if(s.maxTokens != null)
-            maxTokens.value =
-                s.maxTokens;
-
-        temperatureValue.textContent =
-            Number(temperature.value).toFixed(2);
-
-        topPValue.textContent =
-            Number(topP.value).toFixed(2);
-
-        topKValue.textContent =
-            Number(topK.value).toFixed(0);
-
-        minPValue.textContent =
-            Number(minP.value).toFixed(2);
-
-        repeatValue.textContent =
-            Number(repeatPenalty.value).toFixed(2);
-
-    }catch{}
-}
-
-
-settingsButton.addEventListener(
-    "click",
-    () => {
-
-        settingsOverlay.classList.add(
-            "open"
-        );
-
-        loadModelInformation();
-
-    }
-);
-
-
-closeSettings.addEventListener(
-    "click",
-    () => {
-
-        settingsOverlay.classList.remove(
-            "open"
-        );
-
-    }
-);
-
-
-settingsOverlay.addEventListener(
-    "click",
-    event => {
-
-        if(
-            event.target ===
-            settingsOverlay
-        ){
-
-            settingsOverlay.classList.remove(
-                "open"
-            );
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   MOBILE SIDEBAR
-========================================================= */
-
-mobileMenu.addEventListener(
-    "click",
-    () => {
-
-        sidebar.classList.add(
-            "open"
-        );
-
-        mobileOverlay.classList.add(
-            "open"
-        );
-
-    }
-);
-
-
-mobileOverlay.addEventListener(
-    "click",
-    closeMobileSidebar
-);
-
-
-function closeMobileSidebar(){
-
-    sidebar.classList.remove(
-        "open"
-    );
-
-    mobileOverlay.classList.remove(
-        "open"
-    );
-
-}
-
-
-/* =========================================================
+      /* =========================================================
    NEW CHAT
 ========================================================= */
 
-newChat.addEventListener(
-    "click",
-    () => {
+      .new-chat {
+        height: 42px;
+        min-height: 42px;
 
-        if(isGenerating)
-            stopGeneration();
+        margin: 4px 10px 14px;
 
-        conversation = [];
+        padding: 0 12px;
 
-        messages.innerHTML = "";
+        display: flex;
+        align-items: center;
+        gap: 10px;
 
-        messages.classList.add(
-            "hidden"
+        border: 1px solid var(--border);
+        border-radius: 10px;
+
+        background: #191a1c;
+
+        color: var(--text);
+
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+
+        cursor: pointer;
+
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.15s ease;
+      }
+
+      .new-chat:hover {
+        background: #222326;
+        border-color: var(--border-hover);
+      }
+
+      .new-chat:active {
+        transform: scale(0.985);
+      }
+
+      .new-chat svg {
+        width: 17px;
+        height: 17px;
+        color: #aaa;
+        flex: none;
+      }
+
+      .new-chat-label {
+        white-space: nowrap;
+      }
+
+      .sidebar.collapsed .new-chat {
+        width: 44px;
+        margin-left: auto;
+        margin-right: auto;
+
+        justify-content: center;
+        padding: 0;
+      }
+
+      .sidebar.collapsed .new-chat-label {
+        display: none;
+      }
+
+      /* =========================================================
+   CONVERSATIONS
+========================================================= */
+
+      .sidebar-section {
+        padding: 0 10px;
+
+        flex: 1;
+        min-height: 0;
+
+        overflow: auto;
+      }
+
+      .section-title {
+        padding: 0 8px 8px;
+
+        color: var(--text-4);
+
+        font-size: 10px;
+        font-weight: 700;
+
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .conversation-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .conversation {
+        position: relative;
+
+        min-height: 39px;
+
+        padding: 9px 10px;
+
+        display: flex;
+        align-items: center;
+        gap: 9px;
+
+        border-radius: 9px;
+
+        color: var(--text-2);
+
+        cursor: pointer;
+
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+      }
+
+      .conversation:hover {
+        background: rgba(255, 255, 255, 0.055);
+        color: var(--text);
+      }
+
+      .conversation.active {
+        background: #242528;
+        color: var(--text);
+      }
+
+      .conversation-icon {
+        width: 16px;
+        height: 16px;
+        flex: none;
+
+        color: #777980;
+      }
+
+      .conversation-name {
+        flex: 1;
+        min-width: 0;
+
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        font-size: 12px;
+      }
+
+      .conversation-menu {
+        width: 24px;
+        height: 24px;
+
+        display: grid;
+        place-items: center;
+
+        border: 0;
+        border-radius: 6px;
+
+        background: transparent;
+
+        color: var(--text-3);
+
+        opacity: 0;
+
+        cursor: pointer;
+      }
+
+      .conversation:hover .conversation-menu {
+        opacity: 1;
+      }
+
+      .conversation-menu:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: white;
+      }
+
+      .sidebar.collapsed .sidebar-section,
+      .sidebar.collapsed .conversation-list,
+      .sidebar.collapsed .section-title {
+        display: none;
+      }
+
+      /* =========================================================
+   SIDEBAR FOOTER
+========================================================= */
+
+      .sidebar-footer {
+        padding: 12px 10px;
+
+        border-top: 1px solid var(--border);
+      }
+
+      .footer-model {
+        padding: 10px;
+
+        display: flex;
+        align-items: center;
+        gap: 9px;
+
+        border-radius: 9px;
+
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .footer-model-icon {
+        width: 28px;
+        height: 28px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 8px;
+
+        background: #25262a;
+
+        color: #aaa;
+      }
+
+      .footer-model-copy {
+        min-width: 0;
+      }
+
+      .footer-model-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        color: var(--text-2);
+
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .footer-model-state {
+        margin-top: 2px;
+
+        color: var(--text-4);
+
+        font-size: 9px;
+      }
+
+      .sidebar.collapsed .footer-model {
+        justify-content: center;
+      }
+
+      .sidebar.collapsed .footer-model-copy {
+        display: none;
+      }
+
+      /* =========================================================
+   MAIN
+========================================================= */
+
+      .main {
+        position: relative;
+
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+
+        display: flex;
+        flex-direction: column;
+
+        background: radial-gradient(
+          700px 450px at 50% 0%,
+          rgba(113, 98, 195, 0.055),
+          transparent 70%
+        );
+      }
+
+      /* =========================================================
+   HEADER
+========================================================= */
+
+      .topbar {
+        height: 64px;
+        min-height: 64px;
+
+        padding: 0 20px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+
+        background: rgba(23, 24, 26, 0.78);
+
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+
+        z-index: 10;
+      }
+
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .mobile-menu {
+        display: none;
+      }
+
+      .mobile-menu button {
+        width: 36px;
+        height: 36px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid var(--border);
+        border-radius: 9px;
+
+        background: #1e1f21;
+
+        color: #aaa;
+
+        cursor: pointer;
+      }
+
+      .model-selector {
+        position: relative;
+      }
+
+      .model-button {
+        height: 38px;
+
+        padding: 0 10px;
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        border: 1px solid transparent;
+        border-radius: 9px;
+
+        background: transparent;
+
+        color: var(--text);
+
+        font: inherit;
+        font-size: 13px;
+        font-weight: 650;
+
+        cursor: pointer;
+      }
+
+      .model-button:hover {
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .model-button svg {
+        width: 14px;
+        height: 14px;
+
+        color: var(--text-3);
+      }
+
+      .model-status {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background: var(--green);
+
+        box-shadow: 0 0 0 4px rgba(79, 209, 165, 0.07);
+      }
+
+      .model-menu {
+        position: absolute;
+
+        top: 44px;
+        left: 0;
+
+        width: 300px;
+        max-height: 420px;
+
+        padding: 7px;
+
+        overflow: auto;
+
+        border: 1px solid var(--border-hover);
+        border-radius: 12px;
+
+        background: #202124;
+
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.42);
+
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease,
+          visibility 0.15s ease;
+
+        z-index: 100;
+      }
+
+      .model-menu.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .model-option {
+        width: 100%;
+
+        padding: 10px;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        border: 0;
+        border-radius: 8px;
+
+        background: transparent;
+
+        color: var(--text-2);
+
+        text-align: left;
+
+        cursor: pointer;
+      }
+
+      .model-option:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+      }
+
+      .model-option.active {
+        background: rgba(125, 109, 225, 0.13);
+        color: var(--text);
+      }
+
+      .model-option-info {
+        min-width: 0;
+      }
+
+      .model-option-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .model-option-meta {
+        margin-top: 3px;
+
+        color: var(--text-4);
+
+        font-size: 10px;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid transparent;
+        border-radius: 9px;
+
+        background: transparent;
+
+        color: var(--text-3);
+
+        cursor: pointer;
+      }
+
+      .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.055);
+        color: var(--text);
+      }
+
+      /* =========================================================
+   CHAT
+========================================================= */
+
+      .chat {
+        flex: 1;
+        min-height: 0;
+
+        overflow-y: auto;
+
+        scroll-behavior: smooth;
+      }
+
+      .chat::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .chat::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+      }
+
+      /* =========================================================
+   WELCOME
+========================================================= */
+
+      .welcome {
+        width: min(760px, calc(100% - 36px));
+
+        min-height: calc(100% - 20px);
+
+        margin: auto;
+
+        padding: 70px 0 180px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        text-align: center;
+      }
+
+      .welcome-orb {
+        width: 58px;
+        height: 58px;
+
+        margin-bottom: 24px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+
+        background:
+          radial-gradient(circle at 30% 25%, #b1a8ff, transparent 32%),
+          linear-gradient(145deg, #7061cf, #408d76);
+
+        box-shadow: 0 18px 45px rgba(80, 68, 160, 0.2);
+      }
+
+      .welcome-orb svg {
+        width: 30px;
+        height: 30px;
+      }
+
+      .welcome h1 {
+        margin: 0;
+
+        color: #f2f2f4;
+
+        font-size: clamp(34px, 5vw, 50px);
+
+        line-height: 1.05;
+
+        letter-spacing: -0.045em;
+      }
+
+      .welcome-subtitle {
+        max-width: 570px;
+
+        margin: 16px 0 0;
+
+        color: var(--text-3);
+
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .quick-grid {
+        width: 100%;
+
+        margin-top: 34px;
+
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+
+        gap: 10px;
+      }
+
+      .quick-card {
+        min-height: 82px;
+
+        padding: 15px;
+
+        border: 1px solid var(--border);
+        border-radius: 12px;
+
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.025),
+          rgba(255, 255, 255, 0.012)
         );
 
-        welcome.classList.remove(
-            "hidden"
+        color: var(--text);
+
+        text-align: left;
+
+        cursor: pointer;
+
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s var(--ease);
+      }
+
+      .quick-card:hover {
+        background: rgba(255, 255, 255, 0.055);
+        border-color: var(--border-hover);
+        transform: translateY(-2px);
+      }
+
+      .quick-title {
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .quick-text {
+        margin-top: 6px;
+
+        color: var(--text-3);
+
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      /* =========================================================
+   MESSAGES
+========================================================= */
+
+      .messages {
+        width: min(var(--content-width), calc(100% - 36px));
+
+        margin: 0 auto;
+
+        padding: 36px 0 150px;
+      }
+
+      .message {
+        display: flex;
+
+        gap: 12px;
+
+        margin-bottom: 34px;
+
+        animation: messageIn 0.25s var(--ease);
+      }
+
+      @keyframes messageIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .message.user {
+        justify-content: flex-end;
+      }
+
+      .message.assistant {
+        align-items: flex-start;
+      }
+
+      .avatar {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+
+        display: grid;
+        place-items: center;
+
+        margin-top: 1px;
+
+        border-radius: 9px;
+
+        background: linear-gradient(145deg, #7061cf, #408d76);
+
+        box-shadow: 0 5px 15px rgba(76, 65, 150, 0.18);
+      }
+
+      .avatar svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      .message-body {
+        min-width: 0;
+        max-width: min(760px, calc(100% - 42px));
+
+        color: var(--text);
+
+        font-size: 15px;
+        line-height: 1.72;
+      }
+
+      .user .message-body {
+        max-width: min(650px, 85%);
+
+        padding: 11px 15px;
+
+        border-radius: 16px 16px 4px 16px;
+
+        background: #343541;
+
+        color: #ececf0;
+
+        line-height: 1.6;
+      }
+
+      .message-body p {
+        margin: 0 0 14px;
+      }
+
+      .message-body p:last-child {
+        margin-bottom: 0;
+      }
+
+      .message-body h1,
+      .message-body h2,
+      .message-body h3 {
+        margin: 22px 0 10px;
+
+        line-height: 1.25;
+      }
+
+      .message-body h1 {
+        font-size: 23px;
+      }
+
+      .message-body h2 {
+        font-size: 19px;
+      }
+
+      .message-body h3 {
+        font-size: 16px;
+      }
+
+      .message-body ul,
+      .message-body ol {
+        margin: 10px 0;
+        padding-left: 25px;
+      }
+
+      .message-body li {
+        margin: 5px 0;
+      }
+
+      .message-body code {
+        padding: 2px 5px;
+
+        border-radius: 5px;
+
+        background: #292a2d;
+
+        color: #d8d4ff;
+
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+        font-size: 0.9em;
+      }
+
+      .code-block {
+        margin: 15px 0;
+
+        overflow: hidden;
+
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 11px;
+
+        background: #111214;
+      }
+
+      .code-header {
+        height: 34px;
+
+        padding: 0 10px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        background: #191a1d;
+
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+        color: #777980;
+
+        font-size: 10px;
+      }
+
+      .copy-code {
+        border: 0;
+
+        background: transparent;
+
+        color: #8d8f96;
+
+        cursor: pointer;
+
+        font-size: 10px;
+      }
+
+      .copy-code:hover {
+        color: white;
+      }
+
+      .code-block pre {
+        margin: 0;
+
+        padding: 14px;
+
+        overflow: auto;
+
+        color: #d7d7dc;
+
+        font:
+          12px/1.65 "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          monospace;
+      }
+
+      /* =========================================================
+   TYPING
+========================================================= */
+
+      .typing {
+        height: 26px;
+
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .typing span {
+        width: 6px;
+        height: 6px;
+
+        border-radius: 50%;
+
+        background: #888b94;
+
+        animation: typing 1s ease-in-out infinite;
+      }
+
+      .typing span:nth-child(2) {
+        animation-delay: 0.12s;
+      }
+
+      .typing span:nth-child(3) {
+        animation-delay: 0.24s;
+      }
+
+      @keyframes typing {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.35;
+        }
+        30% {
+          transform: translateY(-4px);
+          opacity: 1;
+        }
+      }
+
+      /* =========================================================
+   COMPOSER
+========================================================= */
+
+      .composer-wrap {
+        position: relative;
+
+        padding: 12px 18px 17px;
+
+        background: linear-gradient(
+          to top,
+          var(--bg) 55%,
+          rgba(23, 24, 26, 0.92) 72%,
+          transparent
         );
+      }
+
+      .composer-container {
+        width: min(var(--composer-width), 100%);
+
+        margin: auto;
+      }
+
+      .composer {
+        min-height: 56px;
+
+        display: flex;
+        align-items: flex-end;
+
+        padding: 7px 7px 7px 15px;
+
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 17px;
+
+        background: linear-gradient(180deg, #242528, #202124);
+
+        box-shadow:
+          0 14px 40px rgba(0, 0, 0, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .composer:focus-within {
+        border-color: rgba(143, 130, 255, 0.38);
+
+        box-shadow:
+          0 16px 45px rgba(0, 0, 0, 0.28),
+          0 0 0 3px rgba(125, 109, 225, 0.055);
+      }
+
+      textarea {
+        flex: 1;
+        min-width: 0;
+
+        height: 40px;
+        min-height: 40px;
+        max-height: 180px;
+
+        padding: 8px 0;
+
+        resize: none;
+
+        border: 0;
+        outline: 0;
+
+        background: transparent;
+
+        color: var(--text);
+
+        font: inherit;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      textarea::placeholder {
+        color: #66686e;
+      }
+
+      .send {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+
+        display: grid;
+        place-items: center;
+
+        border: 0;
+        border-radius: 11px;
+
+        background: #e8e8ea;
+
+        color: #202124;
+
+        cursor: pointer;
+
+        transition:
+          transform 0.15s var(--ease),
+          background 0.15s ease,
+          opacity 0.15s ease;
+      }
+
+      .send:hover {
+        background: white;
+        transform: translateY(-1px);
+      }
+
+      .send.stop {
+        background: #df8b95;
+        color: #211719;
+      }
+
+      .send:disabled {
+        opacity: 0.35;
+        cursor: default;
+        transform: none;
+      }
+
+      .composer-hint {
+        margin-top: 7px;
+
+        color: #505259;
+
+        text-align: center;
+
+        font-size: 9px;
+      }
+
+      /* =========================================================
+   SETTINGS DRAWER
+========================================================= */
+
+      .settings-backdrop {
+        position: fixed;
+        inset: 0;
+
+        z-index: 80;
+
+        background: rgba(0, 0, 0, 0.35);
+
+        opacity: 0;
+        pointer-events: none;
+
+        transition: opacity 0.2s ease;
+      }
+
+      .settings-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .settings {
+        position: fixed;
+
+        top: 0;
+        right: 0;
+        bottom: 0;
+
+        width: min(390px, 92vw);
+
+        z-index: 90;
+
+        display: flex;
+        flex-direction: column;
+
+        background: #1d1e20;
+
+        border-left: 1px solid var(--border-hover);
+
+        box-shadow: -20px 0 60px rgba(0, 0, 0, 0.35);
+
+        transform: translateX(100%);
+
+        transition: transform 0.3s var(--ease);
+      }
+
+      .settings.open {
+        transform: translateX(0);
+      }
+
+      .settings-head {
+        height: 64px;
+        min-height: 64px;
+
+        padding: 0 18px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        border-bottom: 1px solid var(--border);
+      }
+
+      .settings-title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .settings-content {
+        padding: 18px;
+
+        overflow: auto;
+      }
+
+      .setting-group {
+        margin-bottom: 24px;
+      }
+
+      .setting-group-title {
+        margin-bottom: 11px;
+
+        color: #8c8e95;
+
+        font-size: 10px;
+        font-weight: 700;
+
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .setting {
+        margin-bottom: 15px;
+      }
+
+      .setting:last-child {
+        margin-bottom: 0;
+      }
+
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        margin-bottom: 7px;
+      }
+
+      .setting-label {
+        color: #d1d1d5;
+
+        font-size: 12px;
+      }
+
+      .setting-value {
+        min-width: 42px;
+
+        padding: 3px 6px;
+
+        border-radius: 5px;
+
+        background: #292a2d;
+
+        color: #aaa;
+
+        text-align: center;
+
+        font-size: 10px;
+        font-family: monospace;
+      }
+
+      input[type="range"] {
+        width: 100%;
+
+        height: 4px;
+
+        accent-color: var(--accent);
+
+        cursor: pointer;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        height: 36px;
+
+        padding: 0 10px;
+
+        border: 1px solid var(--border);
+        border-radius: 8px;
+
+        outline: none;
+
+        background: #252629;
+
+        color: #ddd;
+
+        font: inherit;
+        font-size: 12px;
+      }
+
+      input[type="number"]:focus {
+        border-color: rgba(143, 130, 255, 0.45);
+      }
+
+      textarea.system-prompt {
+        width: 100%;
+        min-height: 100px;
+
+        padding: 10px;
+
+        resize: vertical;
+
+        border: 1px solid var(--border);
+        border-radius: 8px;
+
+        outline: none;
+
+        background: #252629;
+
+        color: #ddd;
+
+        font: inherit;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      /* =========================================================
+   MODEL INFO
+========================================================= */
+
+      .model-info-card {
+        padding: 13px;
+
+        border: 1px solid var(--border);
+        border-radius: 10px;
+
+        background: #18191b;
+      }
+
+      .model-info-name {
+        color: #eee;
+
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .model-info-grid {
+        margin-top: 10px;
+
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+
+        gap: 6px;
+      }
+
+      .meta {
+        padding: 8px;
+
+        border-radius: 7px;
+
+        background: #202124;
+      }
+
+      .meta-label {
+        color: #66686e;
+
+        font-size: 9px;
+      }
+
+      .meta-value {
+        margin-top: 3px;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        color: #aaa;
+
+        font-size: 10px;
+      }
+
+      /* =========================================================
+   TOAST
+========================================================= */
+
+      .toast {
+        position: fixed;
+
+        left: 50%;
+        bottom: 30px;
+
+        z-index: 200;
+
+        padding: 9px 13px;
+
+        border: 1px solid var(--border-hover);
+        border-radius: 8px;
+
+        background: #252629;
+
+        color: #ddd;
+
+        font-size: 11px;
+
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+
+        transform: translate(-50%, 10px);
+
+        opacity: 0;
+        pointer-events: none;
+
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s var(--ease);
+      }
+
+      .toast.show {
+        opacity: 1;
+
+        transform: translate(-50%, 0);
+      }
+
+      /* =========================================================
+   MOBILE OVERLAY
+========================================================= */
+
+      .mobile-overlay {
+        display: none;
+
+        position: fixed;
+        inset: 0;
+
+        z-index: 20;
+
+        background: rgba(0, 0, 0, 0.45);
+
+        backdrop-filter: blur(2px);
+      }
+
+      /* =========================================================
+   EMPTY / ERROR
+========================================================= */
+
+      .empty-models {
+        padding: 15px;
+
+        color: #777980;
+
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      /* =========================================================
+   RESPONSIVE
+========================================================= */
+
+      @media (max-width: 800px) {
+        .sidebar {
+          position: fixed;
+
+          top: 0;
+          left: 0;
+          bottom: 0;
+
+          width: 280px;
+          min-width: 280px;
+
+          transform: translateX(-105%);
+
+          box-shadow: 20px 0 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .sidebar.mobile-open {
+          transform: translateX(0);
+        }
+
+        .sidebar.collapsed {
+          width: 280px;
+          min-width: 280px;
+        }
+
+        .sidebar.collapsed .brand-copy,
+        .sidebar.collapsed .sidebar-section,
+        .sidebar.collapsed .footer-model-copy,
+        .sidebar.collapsed .new-chat-label {
+          display: block;
+        }
+
+        .sidebar.collapsed .brand-copy {
+          width: auto;
+          opacity: 1;
+        }
+
+        .sidebar.collapsed .sidebar-header {
+          justify-content: initial;
+        }
+
+        .sidebar.collapsed .collapse-btn {
+          position: static;
+
+          width: 34px;
+          height: 34px;
+        }
+
+        .sidebar.collapsed .collapse-btn svg {
+          transform: none;
+        }
+
+        .sidebar.collapsed .new-chat {
+          width: auto;
+
+          justify-content: flex-start;
+
+          margin-left: 10px;
+          margin-right: 10px;
+
+          padding: 0 12px;
+        }
+
+        .mobile-overlay.active {
+          display: block;
+        }
+
+        .mobile-menu {
+          display: block;
+        }
+
+        .topbar {
+          padding: 0 12px;
+        }
+
+        .welcome {
+          padding-top: 50px;
+        }
+
+        .welcome h1 {
+          font-size: 36px;
+        }
+
+        .quick-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .messages {
+          width: calc(100% - 24px);
+          padding-top: 25px;
+        }
+
+        .message-body {
+          font-size: 14px;
+        }
+
+        .composer-wrap {
+          padding: 9px 9px 10px;
+        }
+
+        .composer-hint {
+          display: none;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .welcome {
+          width: calc(100% - 28px);
+        }
+
+        .welcome h1 {
+          font-size: 32px;
+        }
+
+        .welcome-subtitle {
+          font-size: 13px;
+        }
+
+        .quick-card {
+          min-height: 72px;
+        }
+
+        .model-button {
+          max-width: 210px;
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <!-- =======================================================
+     SIDEBAR
+======================================================= -->
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">
+            <div class="brand-logo">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 3.3
+                        C13.7 3.3 14.7 4.6 15.9 5.5
+                        C17.1 6.4 19.1 6.8 19.7 8.3
+                        C20.3 9.8 19.2 11.3 18.8 12.6
+                        C18.4 14.1 19.2 15.8 18.2 17
+                        C17.2 18.2 15.2 17.8 13.9 18.4
+                        C12.5 19 11.6 20.7 10.1 20.5
+                        C8.5 20.3 7.8 18.5 6.7 17.5
+                        C5.5 16.5 3.5 16.3 3.1 14.8
+                        C2.7 13.3 4 12 4.1 10.6
+                        C4.2 9.1 3.4 7.4 4.5 6.3
+                        C5.6 5.1 7.5 5.5 8.8 4.8
+                        C10 4.2 10.5 3.3 12 3.3Z"
+                  stroke="white"
+                  stroke-width="1.7"
+                />
+                <circle cx="12" cy="12" r="2.2" fill="white" />
+              </svg>
+            </div>
+
+            <div class="brand-copy">
+              <div class="brand-name">Local AI</div>
+
+              <div class="brand-status">
+                <span class="status-dot"></span>
+                Ollama local
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="collapse-btn"
+            id="collapseBtn"
+            title="Collapse sidebar"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <button class="new-chat" id="newChat">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 5V19M5 12H19"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+
+          <span class="new-chat-label"> New chat </span>
+        </button>
+
+        <div class="sidebar-section">
+          <div class="section-title">Conversations</div>
+
+          <div class="conversation-list" id="conversationList"></div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="footer-model">
+            <div class="footer-model-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path d="M8 12h8" stroke="currentColor" stroke-width="1.5" />
+              </svg>
+            </div>
+
+            <div class="footer-model-copy">
+              <div class="footer-model-name" id="footerModel">
+                Loading model…
+              </div>
+
+              <div class="footer-model-state">Local inference</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="mobile-overlay" id="mobileOverlay"></div>
+
+      <!-- =======================================================
+     MAIN
+======================================================= -->
+
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="mobile-menu">
+              <button id="mobileMenuBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M4 7H20M4 12H20M4 17H20"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div class="model-selector">
+              <button class="model-button" id="modelButton">
+                <span class="model-status"></span>
+
+                <span id="currentModelName"> Loading… </span>
+
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M7 10L12 15L17 10"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+
+              <div class="model-menu" id="modelMenu"></div>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <button class="icon-btn" id="settingsBtn" title="Model settings">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.5 1.5-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.02 1.56v.09h-2.12v-.09a1.7 1.7 0 0 0-1.02-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.5-1.5.06-.06A1.7 1.7 0 0 0 9.2 15a1.7 1.7 0 0 0-1.56-1.02h-.09v-2.12h.09A1.7 1.7 0 0 0 9.2 10.84a1.7 1.7 0 0 0-.34-1.88L8.8 8.9l1.5-1.5.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.02-1.56v-.09h2.12v.09a1.7 1.7 0 0 0 1.02 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.5 1.5-.06.06A1.7 1.7 0 0 0 19.4 10.84a1.7 1.7 0 0 0 1.56 1.02h.09v2.12h-.09A1.7 1.7 0 0 0 19.4 15Z"
+                  stroke="currentColor"
+                  stroke-width="1.1"
+                />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="chat" id="chat">
+          <div class="welcome" id="welcome">
+            <div class="welcome-orb">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 3.3
+                        C13.7 3.3 14.7 4.6 15.9 5.5
+                        C17.1 6.4 19.1 6.8 19.7 8.3
+                        C20.3 9.8 19.2 11.3 18.8 12.6
+                        C18.4 14.1 19.2 15.8 18.2 17
+                        C17.2 18.2 15.2 17.8 13.9 18.4
+                        C12.5 19 11.6 20.7 10.1 20.5
+                        C8.5 20.3 7.8 18.5 6.7 17.5
+                        C5.5 16.5 3.5 16.3 3.1 14.8
+                        C2.7 13.3 4 12 4.1 10.6
+                        C4.2 9.1 3.4 7.4 4.5 6.3
+                        C5.6 5.1 7.5 5.5 8.8 4.8
+                        C10 4.2 10.5 3.3 12 3.3Z"
+                  stroke="white"
+                  stroke-width="1.7"
+                />
+                <circle cx="12" cy="12" r="2.2" fill="white" />
+              </svg>
+            </div>
+
+            <h1>What can I help you with?</h1>
+
+            <p class="welcome-subtitle">
+              A private AI running directly on your machine through Ollama. No
+              cloud required.
+            </p>
+
+            <div class="quick-grid">
+              <button
+                class="quick-card"
+                data-prompt="Explain HTTP like I'm a complete beginner."
+              >
+                <div class="quick-title">Explain something</div>
+
+                <div class="quick-text">
+                  Turn a complicated concept into something simple.
+                </div>
+              </button>
+
+              <button
+                class="quick-card"
+                data-prompt="Give me three interesting programming project ideas I could build this weekend."
+              >
+                <div class="quick-title">Brainstorm ideas</div>
+
+                <div class="quick-text">
+                  Find something useful and fun to build.
+                </div>
+              </button>
+
+              <button
+                class="quick-card"
+                data-prompt="Write a clean HTML, CSS and JavaScript example for a beautiful interactive component."
+              >
+                <div class="quick-title">Write some code</div>
+
+                <div class="quick-text">
+                  Build it and explain the important parts.
+                </div>
+              </button>
+
+              <button
+                class="quick-card"
+                data-prompt="Teach me something fascinating that I probably don't know yet."
+              >
+                <div class="quick-title">Learn something new</div>
+
+                <div class="quick-text">
+                  Give me an interesting rabbit hole.
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="messages hidden" id="messages"></div>
+        </section>
+
+        <div class="composer-wrap">
+          <div class="composer-container">
+            <div class="composer">
+              <textarea
+                id="prompt"
+                rows="1"
+                placeholder="Message your local AI…"
+              ></textarea>
+
+              <button class="send" id="sendBtn" title="Send">
+                <svg
+                  id="sendIcon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M12 19V5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M6 11L12 5L18 11"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div class="composer-hint">
+              Enter to send · Shift + Enter for newline
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- =======================================================
+     SETTINGS
+======================================================= -->
+
+    <div class="settings-backdrop" id="settingsBackdrop"></div>
+
+    <aside class="settings" id="settings">
+      <div class="settings-head">
+        <div class="settings-title">Model settings</div>
+
+        <button class="icon-btn" id="closeSettings">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 6L18 18M18 6L6 18"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-content">
+        <div class="setting-group">
+          <div class="setting-group-title">Active model</div>
+
+          <div class="model-info-card" id="modelInfoCard">
+            Loading model information…
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-group-title">Generation</div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Temperature </span>
+
+              <span class="setting-value" id="temperatureValue"> 0.7 </span>
+            </div>
+
+            <input
+              id="temperature"
+              type="range"
+              min="0"
+              max="2"
+              step="0.05"
+              value="0.7"
+            />
+          </div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Top P </span>
+
+              <span class="setting-value" id="topPValue"> 0.9 </span>
+            </div>
+
+            <input
+              id="topP"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.9"
+            />
+          </div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Top K </span>
+
+              <span class="setting-value" id="topKValue"> 40 </span>
+            </div>
+
+            <input
+              id="topK"
+              type="range"
+              min="1"
+              max="100"
+              step="1"
+              value="40"
+            />
+          </div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Min P </span>
+
+              <span class="setting-value" id="minPValue"> 0.05 </span>
+            </div>
+
+            <input
+              id="minP"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.05"
+            />
+          </div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Repeat penalty </span>
+
+              <span class="setting-value" id="repeatPenaltyValue"> 1.1 </span>
+            </div>
+
+            <input
+              id="repeatPenalty"
+              type="range"
+              min="0.8"
+              max="1.5"
+              step="0.05"
+              value="1.1"
+            />
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-group-title">Context & output</div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Context size </span>
+            </div>
+
+            <input
+              id="numCtx"
+              type="number"
+              min="512"
+              max="131072"
+              step="512"
+              value="8192"
+            />
+          </div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Maximum output tokens </span>
+            </div>
+
+            <input
+              id="numPredict"
+              type="number"
+              min="128"
+              max="32768"
+              step="128"
+              value="4096"
+            />
+          </div>
+
+          <div class="setting">
+            <div class="setting-row">
+              <span class="setting-label"> Seed </span>
+            </div>
+
+            <input
+              id="seed"
+              type="number"
+              min="0"
+              max="2147483647"
+              step="1"
+              placeholder="Random"
+            />
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-group-title">System instruction</div>
+
+          <textarea
+            class="system-prompt"
+            id="systemPrompt"
+            placeholder="Optional system instruction…"
+          >
+You are a helpful, concise local AI assistant.</textarea
+          >
+        </div>
+      </div>
+    </aside>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      /* =========================================================
+   CONFIG
+========================================================= */
+
+      const OLLAMA = "http://localhost:11434";
+
+      const CHAT_API = `${OLLAMA}/api/chat`;
+      const TAGS_API = `${OLLAMA}/api/tags`;
+      const SHOW_API = `${OLLAMA}/api/show`;
+
+      /* =========================================================
+   DOM
+========================================================= */
+
+      const sidebar = document.getElementById("sidebar");
+
+      const collapseBtn = document.getElementById("collapseBtn");
+
+      const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+
+      const mobileOverlay = document.getElementById("mobileOverlay");
+
+      const newChat = document.getElementById("newChat");
+
+      const conversationList = document.getElementById("conversationList");
+
+      const currentModelName = document.getElementById("currentModelName");
+
+      const footerModel = document.getElementById("footerModel");
+
+      const modelButton = document.getElementById("modelButton");
+
+      const modelMenu = document.getElementById("modelMenu");
+
+      const welcome = document.getElementById("welcome");
+
+      const messages = document.getElementById("messages");
+
+      const chat = document.getElementById("chat");
+
+      const promptInput = document.getElementById("prompt");
+
+      const sendBtn = document.getElementById("sendBtn");
+
+      const sendIcon = document.getElementById("sendIcon");
+
+      const settingsBtn = document.getElementById("settingsBtn");
+
+      const settings = document.getElementById("settings");
+
+      const settingsBackdrop = document.getElementById("settingsBackdrop");
+
+      const closeSettings = document.getElementById("closeSettings");
+
+      const modelInfoCard = document.getElementById("modelInfoCard");
+
+      const toast = document.getElementById("toast");
+
+      /* =========================================================
+   SETTINGS ELEMENTS
+========================================================= */
+
+      const controls = {
+        temperature: document.getElementById("temperature"),
+
+        topP: document.getElementById("topP"),
+
+        topK: document.getElementById("topK"),
+
+        minP: document.getElementById("minP"),
+
+        repeatPenalty: document.getElementById("repeatPenalty"),
+
+        numCtx: document.getElementById("numCtx"),
+
+        numPredict: document.getElementById("numPredict"),
+
+        seed: document.getElementById("seed"),
+
+        systemPrompt: document.getElementById("systemPrompt"),
+      };
+
+      const values = {
+        temperature: document.getElementById("temperatureValue"),
+
+        topP: document.getElementById("topPValue"),
+
+        topK: document.getElementById("topKValue"),
+
+        minP: document.getElementById("minPValue"),
+
+        repeatPenalty: document.getElementById("repeatPenaltyValue"),
+      };
+
+      /* =========================================================
+   STATE
+========================================================= */
+
+      let models = [];
+
+      let selectedModel = "";
+
+      let conversations = [];
+
+      let activeConversationId = null;
+
+      let isGenerating = false;
+
+      let abortController = null;
+
+      let toastTimer = null;
+
+      /* =========================================================
+   STORAGE
+========================================================= */
+
+      function saveState() {
+        localStorage.setItem(
+          "local-ai-conversations",
+          JSON.stringify(conversations),
+        );
+
+        localStorage.setItem(
+          "local-ai-settings",
+          JSON.stringify({
+            temperature: controls.temperature.value,
+            topP: controls.topP.value,
+            topK: controls.topK.value,
+            minP: controls.minP.value,
+            repeatPenalty: controls.repeatPenalty.value,
+            numCtx: controls.numCtx.value,
+            numPredict: controls.numPredict.value,
+            seed: controls.seed.value,
+            systemPrompt: controls.systemPrompt.value,
+          }),
+        );
+
+        localStorage.setItem("local-ai-model", selectedModel);
+      }
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(
+            localStorage.getItem("local-ai-conversations"),
+          );
+
+          if (Array.isArray(saved)) {
+            conversations = saved;
+          }
+        } catch {}
+
+        try {
+          const settings = JSON.parse(
+            localStorage.getItem("local-ai-settings"),
+          );
+
+          if (settings) {
+            Object.keys(controls).forEach((key) => {
+              if (settings[key] !== undefined) {
+                controls[key].value = settings[key];
+              }
+            });
+          }
+        } catch {}
+
+        selectedModel = localStorage.getItem("local-ai-model") || "";
+
+        updateSettingLabels();
+      }
+
+      /* =========================================================
+   UTILITIES
+========================================================= */
+
+      function escapeHTML(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function uid() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2);
+      }
+
+      function showToast(text) {
+        toast.textContent = text;
+
+        toast.classList.add("show");
+
+        clearTimeout(toastTimer);
+
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+
+      /* =========================================================
+   MODEL LABEL
+========================================================= */
+
+      function prettyModel(name) {
+        if (!name) {
+          return "No model";
+        }
+
+        return name.replace(/:latest$/, "").replaceAll(":", " · ");
+      }
+
+      /* =========================================================
+   OLLAMA MODEL DISCOVERY
+========================================================= */
+
+      async function loadModels() {
+        try {
+          const response = await fetch(TAGS_API, {
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          models = data.models || [];
+
+          if (!models.length) {
+            selectedModel = "";
+
+            renderModelMenu();
+
+            currentModelName.textContent = "No models installed";
+
+            footerModel.textContent = "No Ollama models";
+
+            return;
+          }
+
+          const names = models.map((model) => model.name);
+
+          if (!selectedModel || !names.includes(selectedModel)) {
+            const preferred = names.find((name) => name.startsWith("gemma3"));
+
+            selectedModel = preferred || names[0];
+          }
+
+          renderModelMenu();
+
+          updateSelectedModelUI();
+
+          await loadModelInfo();
+
+          saveState();
+        } catch (error) {
+          currentModelName.textContent = "Ollama unavailable";
+
+          footerModel.textContent = "Ollama unavailable";
+
+          modelMenu.innerHTML = `
+            <div class="empty-models">
+                Could not connect to Ollama.<br><br>
+                Make sure Ollama is running on
+                <strong>localhost:11434</strong>.
+            </div>
+        `;
+
+          showToast("Could not connect to Ollama");
+        }
+      }
+
+      /* =========================================================
+   MODEL MENU
+========================================================= */
+
+      function renderModelMenu() {
+        if (!models.length) {
+          modelMenu.innerHTML = `
+            <div class="empty-models">
+                No Ollama models found.
+            </div>
+        `;
+
+          return;
+        }
+
+        modelMenu.innerHTML = models
+          .map((model) => {
+            const details = model.details || {};
+
+            const size = model.size ? formatBytes(model.size) : "";
+
+            const family = details.family || details.families?.[0] || "";
+
+            return `
+                <button
+                    class="model-option ${
+                      model.name === selectedModel ? "active" : ""
+                    }"
+                    data-model="${escapeHTML(model.name)}"
+                >
+
+                    <span class="model-status"></span>
+
+                    <span class="model-option-info">
+
+                        <span class="model-option-name">
+                            ${escapeHTML(prettyModel(model.name))}
+                        </span>
+
+                        <span class="model-option-meta">
+                            ${escapeHTML(
+                              [family, size].filter(Boolean).join(" · "),
+                            )}
+                        </span>
+
+                    </span>
+
+                </button>
+            `;
+          })
+          .join("");
+
+        modelMenu.querySelectorAll(".model-option").forEach((button) => {
+          button.addEventListener("click", async () => {
+            selectedModel = button.dataset.model;
+
+            modelMenu.classList.remove("open");
+
+            updateSelectedModelUI();
+
+            await loadModelInfo();
+
+            saveState();
+          });
+        });
+      }
+
+      function updateSelectedModelUI() {
+        const label = prettyModel(selectedModel);
+
+        currentModelName.textContent = label;
+
+        footerModel.textContent = label;
+
+        modelMenu.querySelectorAll(".model-option").forEach((button) => {
+          button.classList.toggle(
+            "active",
+            button.dataset.model === selectedModel,
+          );
+        });
+      }
+
+      /* =========================================================
+   MODEL METADATA
+========================================================= */
+
+      async function loadModelInfo() {
+        if (!selectedModel) {
+          return;
+        }
+
+        modelInfoCard.innerHTML = "Loading model information…";
+
+        try {
+          const response = await fetch(SHOW_API, {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              model: selectedModel,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          const details = data.details || {};
+
+          const info = data.model_info || {};
+
+          const parameterSize =
+            details.parameter_size || findInfo(info, "parameter_count") || "—";
+
+          const quantization = details.quantization_level || "—";
+
+          const family = details.family || details.families?.join(", ") || "—";
+
+          const format = details.format || "—";
+
+          const context = findInfo(info, "context_length") || "—";
+
+          modelInfoCard.innerHTML = `
+
+            <div class="model-info-name">
+                ${escapeHTML(prettyModel(selectedModel))}
+            </div>
+
+            <div class="model-info-grid">
+
+                <div class="meta">
+                    <div class="meta-label">
+                        Parameters
+                    </div>
+                    <div class="meta-value">
+                        ${escapeHTML(parameterSize)}
+                    </div>
+                </div>
+
+                <div class="meta">
+                    <div class="meta-label">
+                        Quantization
+                    </div>
+                    <div class="meta-value">
+                        ${escapeHTML(quantization)}
+                    </div>
+                </div>
+
+                <div class="meta">
+                    <div class="meta-label">
+                        Family
+                    </div>
+                    <div class="meta-value">
+                        ${escapeHTML(family)}
+                    </div>
+                </div>
+
+                <div class="meta">
+                    <div class="meta-label">
+                        Format
+                    </div>
+                    <div class="meta-value">
+                        ${escapeHTML(format)}
+                    </div>
+                </div>
+
+                <div class="meta">
+                    <div class="meta-label">
+                        Context
+                    </div>
+                    <div class="meta-value">
+                        ${escapeHTML(String(context))}
+                    </div>
+                </div>
+
+                <div class="meta">
+                    <div class="meta-label">
+                        Disk size
+                    </div>
+                    <div class="meta-value">
+                        ${escapeHTML(
+                          formatBytes(
+                            models.find((m) => m.name === selectedModel)
+                              ?.size || 0,
+                          ),
+                        )}
+                    </div>
+                </div>
+
+            </div>
+        `;
+        } catch {
+          modelInfoCard.innerHTML = `
+            <div class="model-info-name">
+                ${escapeHTML(prettyModel(selectedModel))}
+            </div>
+
+            <div style="
+                margin-top:8px;
+                color:#777980;
+                font-size:10px;
+            ">
+                Metadata unavailable.
+            </div>
+        `;
+        }
+      }
+
+      function findInfo(info, key) {
+        const direct = info[key];
+
+        if (direct !== undefined) {
+          return direct;
+        }
+
+        const full = Object.keys(info).find((k) => k.endsWith(`.${key}`));
+
+        return full ? info[full] : null;
+      }
+
+      function formatBytes(bytes) {
+        if (!bytes) {
+          return "—";
+        }
+
+        const units = ["B", "KB", "MB", "GB", "TB"];
+
+        let i = 0;
+        let value = bytes;
+
+        while (value >= 1024 && i < units.length - 1) {
+          value /= 1024;
+          i++;
+        }
+
+        return (
+          (value >= 10 ? value.toFixed(0) : value.toFixed(1)) + " " + units[i]
+        );
+      }
+
+      /* =========================================================
+   SETTINGS
+========================================================= */
+
+      function updateSettingLabels() {
+        values.temperature.textContent = Number(
+          controls.temperature.value,
+        ).toFixed(2);
+
+        values.topP.textContent = Number(controls.topP.value).toFixed(2);
+
+        values.topK.textContent = controls.topK.value;
+
+        values.minP.textContent = Number(controls.minP.value).toFixed(2);
+
+        values.repeatPenalty.textContent = Number(
+          controls.repeatPenalty.value,
+        ).toFixed(2);
+      }
+
+      Object.values(controls).forEach((input) => {
+        input.addEventListener("input", () => {
+          updateSettingLabels();
+          saveState();
+        });
+      });
+
+      /* =========================================================
+   SIDEBAR
+========================================================= */
+
+      collapseBtn.addEventListener("click", () => {
+        if (window.innerWidth <= 800) {
+          closeMobileSidebar();
+
+          return;
+        }
+
+        sidebar.classList.toggle("collapsed");
+
+        localStorage.setItem(
+          "local-ai-sidebar",
+          sidebar.classList.contains("collapsed"),
+        );
+      });
+
+      if (localStorage.getItem("local-ai-sidebar") === "true") {
+        sidebar.classList.add("collapsed");
+      }
+
+      /* =========================================================
+   MOBILE
+========================================================= */
+
+      mobileMenuBtn.addEventListener("click", () => {
+        sidebar.classList.add("mobile-open");
+
+        mobileOverlay.classList.add("active");
+      });
+
+      mobileOverlay.addEventListener("click", closeMobileSidebar);
+
+      function closeMobileSidebar() {
+        sidebar.classList.remove("mobile-open");
+
+        mobileOverlay.classList.remove("active");
+      }
+
+      /* =========================================================
+   MODEL DROPDOWN
+========================================================= */
+
+      modelButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        modelMenu.classList.toggle("open");
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".model-selector")) {
+          modelMenu.classList.remove("open");
+        }
+      });
+
+      /* =========================================================
+   SETTINGS DRAWER
+========================================================= */
+
+      settingsBtn.addEventListener("click", openSettings);
+
+      closeSettings.addEventListener("click", closeSettingsPanel);
+
+      settingsBackdrop.addEventListener("click", closeSettingsPanel);
+
+      function openSettings() {
+        settings.classList.add("open");
+
+        settingsBackdrop.classList.add("open");
+      }
+
+      function closeSettingsPanel() {
+        settings.classList.remove("open");
+
+        settingsBackdrop.classList.remove("open");
+      }
+
+      /* =========================================================
+   CONVERSATIONS
+========================================================= */
+
+      function createConversation() {
+        const conversation = {
+          id: uid(),
+
+          title: "New chat",
+
+          messages: [],
+
+          createdAt: Date.now(),
+
+          updatedAt: Date.now(),
+        };
+
+        conversations.unshift(conversation);
+
+        activeConversationId = conversation.id;
+
+        saveState();
+
+        renderConversationList();
+
+        renderMessages();
+
+        return conversation;
+      }
+
+      function activeConversation() {
+        return conversations.find(
+          (conversation) => conversation.id === activeConversationId,
+        );
+      }
+
+      function ensureConversation() {
+        let conversation = activeConversation();
+
+        if (!conversation) {
+          conversation = createConversation();
+        }
+
+        return conversation;
+      }
+
+      function renderConversationList() {
+        conversationList.innerHTML = "";
+
+        if (!conversations.length) {
+          return;
+        }
+
+        conversations
+          .sort((a, b) => b.updatedAt - a.updatedAt)
+          .forEach((conversation) => {
+            const item = document.createElement("div");
+
+            item.className = "conversation";
+
+            if (conversation.id === activeConversationId) {
+              item.classList.add("active");
+            }
+
+            item.innerHTML = `
+
+                <svg
+                    class="conversation-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                >
+                    <path
+                        d="M6 5.5h12A2.5 2.5 0 0 1 20.5 8v7A2.5 2.5 0 0 1 18 17.5H11l-4.5 3v-3H6A2.5 2.5 0 0 1 3.5 15V8A2.5 2.5 0 0 1 6 5.5Z"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                    />
+                </svg>
+
+                <span class="conversation-name">
+                    ${escapeHTML(conversation.title || "New chat")}
+                </span>
+
+                <button
+                    class="conversation-menu"
+                    title="Delete conversation"
+                >
+                    ⋯
+                </button>
+
+            `;
+
+            item.addEventListener("click", (event) => {
+              if (event.target.closest(".conversation-menu")) {
+                deleteConversation(conversation.id);
+
+                return;
+              }
+
+              activeConversationId = conversation.id;
+
+              renderConversationList();
+
+              renderMessages();
+
+              closeMobileSidebar();
+            });
+
+            conversationList.appendChild(item);
+          });
+      }
+
+      function deleteConversation(id) {
+        conversations = conversations.filter(
+          (conversation) => conversation.id !== id,
+        );
+
+        if (activeConversationId === id) {
+          activeConversationId = conversations[0]?.id || null;
+        }
+
+        saveState();
+
+        renderConversationList();
+
+        renderMessages();
+      }
+
+      /* =========================================================
+   NEW CHAT
+========================================================= */
+
+      newChat.addEventListener("click", () => {
+        if (isGenerating) {
+          stopGeneration();
+        }
+
+        activeConversationId = null;
+
+        renderMessages();
 
         promptInput.value = "";
 
         autoResize();
 
-        closeMobileSidebar();
-
         promptInput.focus();
 
-    }
-);
+        closeMobileSidebar();
+      });
 
-
-/* =========================================================
-   SUGGESTIONS
+      /* =========================================================
+   QUICK PROMPTS
 ========================================================= */
 
-document
-    .querySelectorAll(".suggestion")
-    .forEach(
-        button => {
+      document.querySelectorAll(".quick-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          promptInput.value = card.dataset.prompt;
 
-            button.addEventListener(
-                "click",
-                () => {
+          autoResize();
 
-                    promptInput.value =
-                        button.dataset.prompt;
+          promptInput.focus();
+        });
+      });
 
-                    autoResize();
-
-                    promptInput.focus();
-
-                }
-            );
-
-        }
-    );
-
-
-/* =========================================================
+      /* =========================================================
    TEXTAREA
 ========================================================= */
 
-function autoResize(){
+      function autoResize() {
+        promptInput.style.height = "auto";
 
-    promptInput.style.height =
-        "auto";
+        promptInput.style.height =
+          Math.min(promptInput.scrollHeight, 180) + "px";
+      }
 
-    promptInput.style.height =
-        Math.min(
-            promptInput.scrollHeight,
-            180
-        ) + "px";
-}
+      promptInput.addEventListener("input", autoResize);
 
+      promptInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
 
-promptInput.addEventListener(
-    "input",
-    autoResize
-);
+          sendMessage();
+        }
+      });
 
-
-/* =========================================================
-   ENTER
+      /* =========================================================
+   ASSISTANT ICON
 ========================================================= */
 
-promptInput.addEventListener(
-    "keydown",
-    event => {
+      function assistantIcon() {
+        return `
+        <svg viewBox="0 0 24 24" fill="none">
 
-        if(
-            event.key === "Enter" &&
-            !event.shiftKey
-        ){
-
-            event.preventDefault();
-
-            sendMessage();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   MARKDOWN RENDERER
-========================================================= */
-
-function escapeHTML(value){
-
-    return String(value)
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-}
-
-
-function renderMarkdown(text){
-
-    if(!text)
-        return "";
-
-    const blocks = [];
-
-    let source =
-        String(text)
-            .replace(/\r\n/g,"\n");
-
-
-    /*
-       Extract fenced code first.
-    */
-
-    source =
-        source.replace(
-            /```([\w+-]*)\n?([\s\S]*?)```/g,
-            (
-                match,
-                language,
-                code
-            ) => {
-
-                const index =
-                    blocks.length;
-
-                blocks.push({
-                    language:
-                        language || "code",
-
-                    code
-                });
-
-                return `\n@@CODE${index}@@\n`;
-            }
-        );
-
-
-    let html =
-        escapeHTML(source);
-
-
-    /*
-       Headings
-    */
-
-    html =
-        html.replace(
-            /^### (.*)$/gm,
-            "<h3>$1</h3>"
-        );
-
-    html =
-        html.replace(
-            /^## (.*)$/gm,
-            "<h2>$1</h2>"
-        );
-
-    html =
-        html.replace(
-            /^# (.*)$/gm,
-            "<h1>$1</h1>"
-        );
-
-
-    /*
-       Bold
-    */
-
-    html =
-        html.replace(
-            /\*\*(.+?)\*\*/g,
-            "<strong>$1</strong>"
-        );
-
-
-    /*
-       Inline code
-    */
-
-    html =
-        html.replace(
-            /`([^`\n]+)`/g,
-            '<span class="inline-code">$1</span>'
-        );
-
-
-    /*
-       Bullet lists
-    */
-
-    html =
-        html.replace(
-            /(?:^|\n)([-*]) (.+)(?=\n|$)/g,
-            "\n<li>$2</li>"
-        );
-
-
-    html =
-        html.replace(
-            /((?:<li>.*<\/li>\n?)+)/g,
-            "<ul>$1</ul>"
-        );
-
-
-    /*
-       Numbered lists
-    */
-
-    html =
-        html.replace(
-            /(?:^|\n)\d+\. (.+)(?=\n|$)/g,
-            "\n<li>$1</li>"
-        );
-
-
-    /*
-       Paragraphs / line breaks
-    */
-
-    const lines =
-        html.split("\n");
-
-
-    let result = "";
-
-    let paragraph = [];
-
-
-    function flushParagraph(){
-
-        if(!paragraph.length)
-            return;
-
-        const value =
-            paragraph.join("<br>");
-
-        if(
-            value.startsWith("<h1>") ||
-            value.startsWith("<h2>") ||
-            value.startsWith("<h3>") ||
-            value.startsWith("<ul>")
-        ){
-
-            result += value;
-
-        }else{
-
-            result +=
-                `<p>${value}</p>`;
-
-        }
-
-        paragraph = [];
-
-    }
-
-
-    for(
-        const line
-        of lines
-    ){
-
-        if(
-            /^<h[123]>/.test(line) ||
-            /^<ul>/.test(line) ||
-            /^@@CODE\d+@@$/.test(line)
-        ){
-
-            flushParagraph();
-
-            result += line;
-
-        }else{
-
-            paragraph.push(line);
-
-        }
-
-    }
-
-
-    flushParagraph();
-
-
-    /*
-       Restore code blocks.
-    */
-
-    blocks.forEach(
-        (block,index) => {
-
-            const code =
-                escapeHTML(
-                    block.code
-                        .replace(/\n$/,"")
-                );
-
-            const replacement = `
-
-                <div class="code-wrap">
-
-                    <div class="code-header">
-
-                        <span>
-                            ${escapeHTML(block.language)}
-                        </span>
-
-                        <button
-                            class="copy-code"
-                            data-code="${escapeHTML(block.code)}"
-                        >
-                            Copy
-                        </button>
-
-                    </div>
-
-                    <pre><code>${code}</code></pre>
-
-                </div>
-            `;
-
-            result =
-                result.replace(
-                    `<p>@@CODE${index}@@</p>`,
-                    replacement
-                );
-
-            result =
-                result.replace(
-                    `@@CODE${index}@@`,
-                    replacement
-                );
-
-        }
-    );
-
-
-    return result;
-}
-
-
-/* =========================================================
-   SHOW CHAT
-========================================================= */
-
-function showMessages(){
-
-    welcome.classList.add(
-        "hidden"
-    );
-
-    messages.classList.remove(
-        "hidden"
-    );
-
-}
-
-
-/* =========================================================
-   AVATARS
-========================================================= */
-
-function aiIcon(){
-
-    return `
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-        >
             <path
-                d="M12 3.5c1.8 0 2.8 1.8 4 2.5
-                1.2.7 3.3.3 4.2 1.8
-                .9 1.5-.3 2.9-.5 4.2
-                -.2 1.4 1 3.1-.2 4.3
-                -1.2 1.2-2.8.1-4.2.5
-                -1.4.4-2.5 2.1-4 1.6
-                -1.5-.5-1.5-2.4-2.4-3.4
-                -.9-1-2.9-1.1-3.3-2.7
-                -.4-1.5 1.2-2.5 1.3-3.9
-                .1-1.5-1-3-.1-4.2
-                .9-1.2 2.8-.8 4-1.5
-                1.2-.7 1.4-3.2 3.2-3.2Z"
-                stroke="currentColor"
-                stroke-width="1.4"
+                d="M12 3.3
+                C13.7 3.3 14.7 4.6 15.9 5.5
+                C17.1 6.4 19.1 6.8 19.7 8.3
+                C20.3 9.8 19.2 11.3 18.8 12.6
+                C18.4 14.1 19.2 15.8 18.2 17
+                C17.2 18.2 15.2 17.8 13.9 18.4
+                C12.5 19 11.6 20.7 10.1 20.5
+                C8.5 20.3 7.8 18.5 6.7 17.5
+                C5.5 16.5 3.5 16.3 3.1 14.8
+                C2.7 13.3 4 12 4.1 10.6
+                C4.2 9.1 3.4 7.4 4.5 6.3
+                C5.6 5.1 7.5 5.5 8.8 4.8
+                C10 4.2 10.5 3.3 12 3.3Z"
+                stroke="white"
+                stroke-width="1.7"
             />
 
             <circle
                 cx="12"
                 cy="12"
-                r="2"
-                fill="currentColor"
+                r="2.2"
+                fill="white"
             />
+
         </svg>
     `;
-}
+      }
 
-
-function userIcon(){
-
-    return `
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-        >
-            <circle
-                cx="12"
-                cy="8"
-                r="3.2"
-                stroke="currentColor"
-                stroke-width="1.7"
-            />
-
-            <path
-                d="M5.5 19c.8-3 3-4.5 6.5-4.5
-                s5.7 1.5 6.5 4.5"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-            />
-        </svg>
-    `;
-}
-
-
-/* =========================================================
-   ADD MESSAGE
+      /* =========================================================
+   MARKDOWN RENDERER
 ========================================================= */
 
-function addMessage(
-    role,
-    content
-){
+      function renderMarkdown(text) {
+        let source = String(text || "");
 
-    showMessages();
+        const blocks = [];
 
-    const wrapper =
-        document.createElement("div");
+        source = source.replace(
+          /```([\w+-]*)\n?([\s\S]*?)```/g,
+          (_, language, code) => {
+            const index =
+              blocks.push({
+                language: language || "code",
+                code,
+              }) - 1;
 
-    wrapper.className =
-        `message ${role}`;
-
-
-    const row =
-        document.createElement("div");
-
-    row.className =
-        "message-row";
-
-
-    const avatar =
-        document.createElement("div");
-
-    avatar.className =
-        "message-avatar";
-
-    avatar.innerHTML =
-        role === "assistant"
-            ? aiIcon()
-            : userIcon();
-
-
-    const body =
-        document.createElement("div");
-
-    body.className =
-        "message-body";
-
-
-    const roleLabel =
-        document.createElement("div");
-
-    roleLabel.className =
-        "message-role";
-
-    roleLabel.textContent =
-        role === "assistant"
-            ? prettyModelName(selectedModel)
-            : "You";
-
-
-    const text =
-        document.createElement("div");
-
-    text.className =
-        "message-text";
-
-
-    if(role === "assistant"){
-
-        text.innerHTML =
-            renderMarkdown(content);
-
-    }else{
-
-        text.textContent =
-            content;
-
-    }
-
-
-    body.appendChild(
-        roleLabel
-    );
-
-    body.appendChild(
-        text
-    );
-
-
-    if(role === "assistant"){
-
-        const actions =
-            document.createElement("div");
-
-        actions.className =
-            "message-actions";
-
-
-        const copy =
-            document.createElement("button");
-
-        copy.className =
-            "message-action";
-
-        copy.title =
-            "Copy response";
-
-        copy.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none">
-                <rect
-                    x="8"
-                    y="8"
-                    width="11"
-                    height="11"
-                    rx="2"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                />
-
-                <path
-                    d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                />
-            </svg>
-        `;
-
-
-        copy.addEventListener(
-            "click",
-            () => {
-
-                copyText(
-                    content
-                );
-
-            }
+            return `@@CODE${index}@@`;
+          },
         );
 
+        let html = escapeHTML(source);
 
-        actions.appendChild(
-            copy
-        );
+        html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
 
+        html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
 
-        body.appendChild(
-            actions
-        );
+        html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
 
-    }
+        html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
+        html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
 
-    row.appendChild(
-        avatar
-    );
+        html = html.replace(/^\s*[-*] (.*)$/gm, "<li>$1</li>");
 
-    row.appendChild(
-        body
-    );
+        html = html.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
 
-    wrapper.appendChild(
-        row
-    );
+        html = html.replace(/\n\n+/g, "</p><p>");
 
-    messages.appendChild(
-        wrapper
-    );
+        html = "<p>" + html + "</p>";
 
+        html = html.replace(/<p>(\s*<h[123]>)/g, "$1");
 
-    /*
-       Bind code copy buttons.
-    */
+        html = html.replace(/(<\/h[123]>)\s*<\/p>/g, "$1");
 
-    text
-        .querySelectorAll(".copy-code")
-        .forEach(
-            button => {
+        html = html.replace(/@@CODE(\d+)@@/g, (_, index) => {
+          const block = blocks[Number(index)];
 
-                button.addEventListener(
-                    "click",
-                    () => {
+          return `
+                    <div class="code-block">
 
-                        copyText(
-                            button
-                                .getAttribute(
-                                    "data-code"
-                                )
-                        );
+                        <div class="code-header">
 
-                    }
-                );
+                            <span>
+                                ${escapeHTML(block.language)}
+                            </span>
 
-            }
-        );
+                            <button
+                                class="copy-code"
+                                data-code="${escapeHTML(block.code)}"
+                            >
+                                Copy
+                            </button>
 
+                        </div>
 
-    scrollToBottom();
+                        <pre>${escapeHTML(block.code)}</pre>
 
-    return text;
-}
-
-
-/* =========================================================
-   TYPING
-========================================================= */
-
-function addTyping(){
-
-    showMessages();
-
-    const wrapper =
-        document.createElement("div");
-
-    wrapper.id =
-        "typingMessage";
-
-    wrapper.className =
-        "message assistant";
-
-
-    wrapper.innerHTML = `
-
-        <div class="message-row">
-
-            <div class="message-avatar">
-                ${aiIcon()}
-            </div>
-
-            <div class="message-body">
-
-                <div class="message-role">
-                    ${escapeHTML(prettyModelName(selectedModel))}
-                </div>
-
-                <div class="message-text">
-
-                    <div class="typing">
-                        <span></span>
-                        <span></span>
-                        <span></span>
                     </div>
+                `;
+        });
 
-                </div>
+        return html;
+      }
 
-            </div>
-
-        </div>
-    `;
-
-
-    messages.appendChild(
-        wrapper
-    );
-
-    scrollToBottom();
-}
-
-
-/* =========================================================
-   GENERATING BUTTON
+      /* =========================================================
+   CODE COPY
 ========================================================= */
 
-function setGenerating(
-    generating
-){
+      messages.addEventListener("click", async (event) => {
+        const button = event.target.closest(".copy-code");
 
-    isGenerating =
-        generating;
+        if (!button) {
+          return;
+        }
 
+        const code = button.getAttribute("data-code");
 
-    if(generating){
+        try {
+          await navigator.clipboard.writeText(code);
 
-        sendButton.classList.add(
-            "stop"
-        );
+          button.textContent = "Copied";
 
-        sendButton.setAttribute(
-            "aria-label",
-            "Stop generating"
-        );
+          setTimeout(() => (button.textContent = "Copy"), 1200);
+        } catch {
+          showToast("Could not copy code");
+        }
+      });
 
-        sendSvg.innerHTML = `
+      /* =========================================================
+   RENDER MESSAGES
+========================================================= */
+
+      function renderMessages() {
+        const conversation = activeConversation();
+
+        if (!conversation || !conversation.messages.length) {
+          welcome.classList.remove("hidden");
+
+          messages.classList.add("hidden");
+
+          messages.innerHTML = "";
+
+          return;
+        }
+
+        welcome.classList.add("hidden");
+
+        messages.classList.remove("hidden");
+
+        messages.innerHTML = "";
+
+        conversation.messages.forEach((message) => {
+          addRenderedMessage(message.role, message.content);
+        });
+
+        requestAnimationFrame(() => {
+          chat.scrollTop = chat.scrollHeight;
+        });
+      }
+
+      function addRenderedMessage(role, content) {
+        const wrapper = document.createElement("div");
+
+        wrapper.className = `message ${role}`;
+
+        if (role === "assistant") {
+          const avatar = document.createElement("div");
+
+          avatar.className = "avatar";
+
+          avatar.innerHTML = assistantIcon();
+
+          wrapper.appendChild(avatar);
+        }
+
+        const body = document.createElement("div");
+
+        body.className = "message-body";
+
+        if (role === "assistant") {
+          body.innerHTML = renderMarkdown(content);
+        } else {
+          body.textContent = content;
+        }
+
+        wrapper.appendChild(body);
+
+        messages.appendChild(wrapper);
+
+        return body;
+      }
+
+      /* =========================================================
+   GENERATING UI
+========================================================= */
+
+      function setGenerating(generating) {
+        isGenerating = generating;
+
+        if (generating) {
+          sendBtn.classList.add("stop");
+
+          sendBtn.title = "Stop generating";
+
+          sendIcon.innerHTML = `
             <rect
                 x="7"
                 y="7"
@@ -3525,19 +3243,12 @@ function setGenerating(
                 fill="currentColor"
             />
         `;
+        } else {
+          sendBtn.classList.remove("stop");
 
-    }else{
+          sendBtn.title = "Send";
 
-        sendButton.classList.remove(
-            "stop"
-        );
-
-        sendButton.setAttribute(
-            "aria-label",
-            "Send"
-        );
-
-        sendSvg.innerHTML = `
+          sendIcon.innerHTML = `
             <path
                 d="M12 19V5"
                 stroke="currentColor"
@@ -3546,696 +3257,364 @@ function setGenerating(
             />
 
             <path
-                d="M6 11l6-6 6 6"
+                d="M6 11L12 5L18 11"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
             />
         `;
-
-    }
-}
-
-
-/* =========================================================
-   SEND BUTTON
-========================================================= */
-
-sendButton.addEventListener(
-    "click",
-    () => {
-
-        if(isGenerating){
-
-            stopGeneration();
-
-        }else{
-
-            sendMessage();
-
         }
+      }
 
-    }
-);
-
-
-/* =========================================================
+      /* =========================================================
    STOP
 ========================================================= */
 
-function stopGeneration(){
+      function stopGeneration() {
+        if (abortController) {
+          abortController.abort();
+        }
 
-    if(abortController){
+        setGenerating(false);
+      }
 
-        abortController.abort();
-
-        abortController = null;
-
-    }
-
-
-    const typing =
-        document.getElementById(
-            "typingMessage"
-        );
-
-    if(typing)
-        typing.remove();
-
-
-    setGenerating(false);
-}
-
-
-/* =========================================================
-   OLLAMA OPTIONS
+      /* =========================================================
+   SEND
 ========================================================= */
 
-function getOptions(){
+      sendBtn.addEventListener("click", () => {
+        if (isGenerating) {
+          stopGeneration();
+        } else {
+          sendMessage();
+        }
+      });
 
-    return {
-
-        temperature:
-            Number(
-                temperature.value
-            ),
-
-        top_p:
-            Number(
-                topP.value
-            ),
-
-        top_k:
-            Number(
-                topK.value
-            ),
-
-        min_p:
-            Number(
-                minP.value
-            ),
-
-        repeat_penalty:
-            Number(
-                repeatPenalty.value
-            ),
-
-        num_ctx:
-            Number(
-                contextSize.value
-            ),
-
-        num_predict:
-            Number(
-                maxTokens.value
-            )
-    };
-}
-
-
-/* =========================================================
+      /* =========================================================
    SEND MESSAGE
 ========================================================= */
 
-async function sendMessage(){
+      async function sendMessage() {
+        const text = promptInput.value.trim();
 
-    const text =
-        promptInput.value.trim();
-
-
-    if(
-        !text ||
-        isGenerating
-    )
-        return;
-
-
-    conversation.push({
-
-        role:"user",
-
-        content:text
-
-    });
-
-
-    addMessage(
-        "user",
-        text
-    );
-
-
-    promptInput.value = "";
-
-    autoResize();
-
-    addTyping();
-
-    setGenerating(true);
-
-
-    abortController =
-        new AbortController();
-
-
-    try{
-
-        const response =
-            await fetch(
-                CHAT_API,
-                {
-
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    signal:
-                        abortController.signal,
-
-                    body:
-                        JSON.stringify({
-
-                            model:
-                                selectedModel,
-
-                            messages:
-                                conversation,
-
-                            stream:true,
-
-                            options:
-                                getOptions()
-
-                        })
-
-                }
-            );
-
-
-        if(!response.ok){
-
-            let detail = "";
-
-            try{
-
-                detail =
-                    await response.text();
-
-            }catch{}
-
-
-            throw new Error(
-                `Ollama returned HTTP ${response.status}${detail ? ": " + detail : ""}`
-            );
-
+        if (!text || isGenerating) {
+          return;
         }
 
+        if (!selectedModel) {
+          showToast("Install an Ollama model first");
 
-        const typing =
-            document.getElementById(
-                "typingMessage"
-            );
-
-        if(typing)
-            typing.remove();
-
-
-        const assistantElement =
-            addMessage(
-                "assistant",
-                ""
-            );
-
-
-        currentAssistantElement =
-            assistantElement;
-
-
-        const reader =
-            response.body.getReader();
-
-
-        const decoder =
-            new TextDecoder();
-
-
-        let buffer = "";
-
-        let answer = "";
-
-
-        /*
-           IMPORTANT:
-           Ollama streaming is NDJSON.
-           A JSON object can be split between
-           network chunks, so we keep a buffer.
-        */
-
-        while(true){
-
-            const {
-                done,
-                value
-            } =
-                await reader.read();
-
-
-            if(done)
-                break;
-
-
-            buffer +=
-                decoder.decode(
-                    value,
-                    {
-                        stream:true
-                    }
-                );
-
-
-            const lines =
-                buffer.split("\n");
-
-
-            buffer =
-                lines.pop()
-                || "";
-
-
-            for(
-                const line
-                of lines
-            ){
-
-                if(!line.trim())
-                    continue;
-
-
-                let data;
-
-                try{
-
-                    data =
-                        JSON.parse(
-                            line
-                        );
-
-                }catch(error){
-
-                    console.warn(
-                        "Invalid Ollama JSON:",
-                        line
-                    );
-
-                    continue;
-
-                }
-
-
-                const token =
-                    data
-                        ?.message
-                        ?.content
-                    || "";
-
-
-                if(token){
-
-                    answer +=
-                        token;
-
-
-                    assistantElement.innerHTML =
-                        renderMarkdown(
-                            answer
-                        );
-
-
-                    bindCodeButtons(
-                        assistantElement
-                    );
-
-
-                    scrollToBottom();
-
-                }
-
-
-                if(data.done){
-
-                    break;
-
-                }
-
-            }
-
+          return;
         }
 
+        const conversation = ensureConversation();
 
-        /*
-           Process remaining buffer.
-        */
-
-        if(buffer.trim()){
-
-            try{
-
-                const data =
-                    JSON.parse(
-                        buffer
-                    );
-
-                const token =
-                    data
-                        ?.message
-                        ?.content
-                    || "";
-
-                if(token){
-
-                    answer +=
-                        token;
-
-                    assistantElement.innerHTML =
-                        renderMarkdown(
-                            answer
-                        );
-
-                }
-
-            }catch{}
-
+        if (conversation.messages.length === 0) {
+          conversation.title =
+            text.length > 45 ? text.slice(0, 45) + "…" : text;
         }
 
-
-        if(!answer){
-
-            answer =
-                "The model returned an empty response.";
-
-            assistantElement.textContent =
-                answer;
-
-        }
-
-
-        conversation.push({
-
-            role:"assistant",
-
-            content:answer
-
+        conversation.messages.push({
+          role: "user",
+          content: text,
         });
 
+        conversation.updatedAt = Date.now();
 
-    }catch(error){
+        promptInput.value = "";
 
-        const typing =
-            document.getElementById(
-                "typingMessage"
-            );
+        autoResize();
 
-        if(typing)
-            typing.remove();
+        saveState();
 
+        renderConversationList();
 
-        if(
-            error.name ===
-            "AbortError"
-        ){
+        renderMessages();
 
-            return;
+        /* typing */
 
-        }
+        const typingWrapper = document.createElement("div");
 
+        typingWrapper.className = "message assistant";
 
-        const errorMessage =
-            `I couldn't connect to Ollama.
+        typingWrapper.id = "typingMessage";
 
-Make sure Ollama is running and that the selected model exists.
+        typingWrapper.innerHTML = `
 
-${error.message}`;
+        <div class="avatar">
+            ${assistantIcon()}
+        </div>
 
+        <div class="message-body">
 
-        addMessage(
-            "assistant",
-            errorMessage
-        );
+            <div class="typing">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
 
-    }finally{
+        </div>
+    `;
 
-        abortController = null;
+        messages.appendChild(typingWrapper);
 
-        currentAssistantElement = null;
+        chat.scrollTop = chat.scrollHeight;
 
-        setGenerating(false);
+        setGenerating(true);
 
-        promptInput.focus();
+        abortController = new AbortController();
 
-    }
+        try {
+          const apiMessages = [];
 
-}
+          const system = controls.systemPrompt.value.trim();
 
+          if (system) {
+            apiMessages.push({
+              role: "system",
+              content: system,
+            });
+          }
 
-/* =========================================================
-   CODE BUTTONS
-========================================================= */
+          apiMessages.push(...conversation.messages);
 
-function bindCodeButtons(
-    container
-){
+          const options = {
+            temperature: Number(controls.temperature.value),
 
-    container
-        .querySelectorAll(".copy-code")
-        .forEach(
-            button => {
+            top_p: Number(controls.topP.value),
 
-                if(
-                    button.dataset.bound
-                )
-                    return;
+            top_k: Number(controls.topK.value),
 
+            min_p: Number(controls.minP.value),
 
-                button.dataset.bound =
-                    "true";
+            repeat_penalty: Number(controls.repeatPenalty.value),
 
+            num_ctx: Number(controls.numCtx.value),
 
-                button.addEventListener(
-                    "click",
-                    () => {
+            num_predict: Number(controls.numPredict.value),
+          };
 
-                        copyText(
-                            button.getAttribute(
-                                "data-code"
-                            )
-                        );
+          const seed = controls.seed.value.trim();
 
-                    }
-                );
+          if (seed !== "") {
+            options.seed = Number(seed);
+          }
 
-            }
-        );
+          const response = await fetch(CHAT_API, {
+            method: "POST",
 
-}
-
-
-/* =========================================================
-   COPY
-========================================================= */
-
-async function copyText(
-    text
-){
-
-    try{
-
-        await navigator.clipboard.writeText(
-            text
-        );
-
-        showToast(
-            "Copied to clipboard"
-        );
-
-    }catch{
-
-        showToast(
-            "Could not copy"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-let toastTimer;
-
-function showToast(
-    text
-){
-
-    toast.textContent =
-        text;
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    clearTimeout(
-        toastTimer
-    );
-
-
-    toastTimer =
-        setTimeout(
-            () => {
-
-                toast.classList.remove(
-                    "show"
-                );
-
+            headers: {
+              "Content-Type": "application/json",
             },
-            1500
-        );
 
-}
+            signal: abortController.signal,
 
+            body: JSON.stringify({
+              model: selectedModel,
 
-/* =========================================================
-   SCROLL
-========================================================= */
+              messages: apiMessages,
 
-function scrollToBottom(){
+              stream: true,
 
-    requestAnimationFrame(
-        () => {
+              options,
+            }),
+          });
 
-            chat.scrollTo({
+          if (!response.ok) {
+            const errorText = await response.text();
 
-                top:
-                    chat.scrollHeight,
+            throw new Error(`Ollama HTTP ${response.status}: ${errorText}`);
+          }
 
-                behavior:
-                    "smooth"
+          typingWrapper.remove();
 
+          const assistantWrapper = document.createElement("div");
+
+          assistantWrapper.className = "message assistant";
+
+          const avatar = document.createElement("div");
+
+          avatar.className = "avatar";
+
+          avatar.innerHTML = assistantIcon();
+
+          const body = document.createElement("div");
+
+          body.className = "message-body";
+
+          assistantWrapper.appendChild(avatar);
+
+          assistantWrapper.appendChild(body);
+
+          messages.appendChild(assistantWrapper);
+
+          let answer = "";
+
+          const reader = response.body.getReader();
+
+          const decoder = new TextDecoder();
+
+          let buffer = "";
+
+          while (true) {
+            const result = await reader.read();
+
+            if (result.done) {
+              break;
+            }
+
+            buffer += decoder.decode(result.value, {
+              stream: true,
             });
 
-        }
-    );
+            const lines = buffer.split("\n");
 
-}
+            buffer = lines.pop() || "";
 
+            for (const line of lines) {
+              const trimmed = line.trim();
 
-/* =========================================================
-   MODEL BUTTON
-========================================================= */
+              if (!trimmed) {
+                continue;
+              }
 
-document
-    .getElementById("modelButton")
-    .addEventListener(
-        "click",
-        async () => {
+              try {
+                const data = JSON.parse(trimmed);
 
-            await loadModels();
+                if (data.message?.content) {
+                  answer += data.message.content;
 
-            /*
-               A simple native model chooser is used
-               so the UI doesn't need another dependency.
-            */
+                  body.innerHTML = renderMarkdown(answer);
 
-            try{
-
-                const response =
-                    await fetch(
-                        TAGS_API
-                    );
-
-                const data =
-                    await response.json();
-
-                const models =
-                    data.models || [];
-
-
-                if(!models.length){
-
-                    showToast(
-                        "No Ollama models found"
-                    );
-
-                    return;
-
+                  chat.scrollTop = chat.scrollHeight;
                 }
 
-
-                const names =
-                    models
-                        .map(
-                            m => m.name
-                        )
-                        .join("\n");
-
-
-                const choice =
-                    prompt(
-                        `Choose an installed Ollama model:\n\n${names}`,
-                        selectedModel
-                    );
-
-
-                if(
-                    choice &&
-                    models.some(
-                        m =>
-                            m.name === choice.trim()
-                    )
-                ){
-
-                    selectedModel =
-                        choice.trim();
-
-                    updateModelUI();
-
-                    await loadModelInformation();
-
+                if (data.error) {
+                  throw new Error(data.error);
                 }
-
-            }catch{
-
-                showToast(
-                    "Could not read Ollama models"
-                );
-
+              } catch (parseError) {
+                if (
+                  parseError.message &&
+                  !parseError.message.includes("Unexpected token")
+                ) {
+                  throw parseError;
+                }
+              }
             }
+          }
 
+          buffer += decoder.decode();
+
+          if (buffer.trim()) {
+            try {
+              const data = JSON.parse(buffer.trim());
+
+              if (data.message?.content) {
+                answer += data.message.content;
+              }
+            } catch {}
+          }
+
+          if (!answer.trim()) {
+            answer = "The model returned an empty response.";
+          }
+
+          conversation.messages.push({
+            role: "assistant",
+
+            content: answer,
+          });
+
+          conversation.updatedAt = Date.now();
+
+          saveState();
+
+          renderConversationList();
+        } catch (error) {
+          const typing = document.getElementById("typingMessage");
+
+          if (typing) {
+            typing.remove();
+          }
+
+          if (error.name === "AbortError") {
+            return;
+          }
+
+          const errorMessage =
+            `I couldn't reach Ollama.\n\n` +
+            `${error.message}\n\n` +
+            `Make sure Ollama is running and that ` +
+            `the selected model is installed.`;
+
+          conversation.messages.push({
+            role: "assistant",
+
+            content: errorMessage,
+          });
+
+          conversation.updatedAt = Date.now();
+
+          saveState();
+
+          renderMessages();
+        } finally {
+          abortController = null;
+
+          setGenerating(false);
+
+          promptInput.focus();
         }
-    );
+      }
 
-
-/* =========================================================
-   INITIALIZE
+      /* =========================================================
+   INITIAL STATE
 ========================================================= */
 
-loadSettings();
+      function initializeConversations() {
+        if (!conversations.length) {
+          activeConversationId = null;
+        } else {
+          activeConversationId = conversations[0].id;
+        }
 
-updateModelUI();
+        renderConversationList();
 
-autoResize();
+        renderMessages();
+      }
 
-checkOllama();
+      /* =========================================================
+   KEYBOARD SHORTCUTS
+========================================================= */
 
-promptInput.focus();
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          modelMenu.classList.remove("open");
 
-</script>
+          closeSettingsPanel();
+        }
 
-</body>
+        if ((event.ctrlKey || event.metaKey) && event.key === "k") {
+          event.preventDefault();
+
+          promptInput.focus();
+        }
+      });
+
+      /* =========================================================
+   START
+========================================================= */
+
+      loadState();
+
+      initializeConversations();
+
+      loadModels();
+
+      autoResize();
+
+      promptInput.focus();
+    </script>
+  </body>
 </html>
