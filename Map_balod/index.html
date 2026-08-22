@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Balod District Map</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <title>Balod – Free Map (Roads & Satellite)</title>
+
+    <!-- Leaflet CSS + JS (free & open-source) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
     <style>
-        /* ─── RESET & BASE ─── */
-        *,
-        *::before,
-        *::after {
+        /* ─── RESET & BODY ─── */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -28,18 +31,17 @@
         /* ─── FLOATING CARD ─── */
         .floating-card {
             position: relative;
-            width: 760px;
+            width: 820px;
             max-width: 100%;
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 48px;
-            padding: 28px 28px 32px;
+            padding: 24px 24px 28px;
             box-shadow:
                 0 30px 80px rgba(0, 0, 0, 0.7),
                 0 0 0 1px rgba(255, 255, 255, 0.06),
                 inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-            transition: transform 0.3s ease, box-shadow 0.4s ease;
             animation: float 6s ease-in-out infinite;
             will-change: transform;
         }
@@ -54,7 +56,6 @@
             }
         }
 
-        /* subtle shimmer overlay */
         .floating-card::before {
             content: '';
             position: absolute;
@@ -74,8 +75,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 18px;
-            padding: 0 6px;
+            margin-bottom: 16px;
+            padding: 0 4px;
         }
 
         .card-header h1 {
@@ -107,30 +108,69 @@
             backdrop-filter: blur(4px);
         }
 
-        /* ─── MAP WRAPPER ─── */
+        /* ─── MAP CONTAINER ─── */
         .map-wrapper {
             position: relative;
             border-radius: 28px;
             overflow: hidden;
-            background: radial-gradient(ellipse at 50% 60%, #1e3347, #0d1823);
             box-shadow: inset 0 4px 40px rgba(0, 0, 0, 0.5);
+            background: #111;
         }
 
-        .map-wrapper canvas {
-            display: block;
+        #leafletMap {
             width: 100%;
-            height: auto;
-            aspect-ratio: 700 / 520;
+            height: 520px;
             border-radius: 28px;
-            cursor: default;
-            transition: filter 0.3s ease;
+            background: #1a2632;
         }
 
-        .map-wrapper canvas:hover {
-            filter: brightness(1.04);
+        /* custom leaflet controls – subtle glass style */
+        .leaflet-control-zoom a {
+            background: rgba(20, 30, 45, 0.75) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            color: #e0f0ff !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+        }
+        .leaflet-control-zoom a:hover {
+            background: rgba(60, 120, 200, 0.4) !important;
+        }
+        .leaflet-control-attribution {
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: rgba(255, 255, 255, 0.6) !important;
+            border-radius: 20px 0 0 0 !important;
+            padding: 4px 14px !important;
+            font-size: 10px !important;
+        }
+        .leaflet-control-attribution a {
+            color: rgba(180, 220, 255, 0.8) !important;
         }
 
-        /* ─── MAP OVERLAY INFO ─── */
+        /* layer control tweaks */
+        .leaflet-control-layers {
+            background: rgba(16, 26, 40, 0.7) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            border-radius: 16px !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+        }
+        .leaflet-control-layers label {
+            color: #d0e4ff !important;
+            font-weight: 400;
+            font-size: 13px;
+            letter-spacing: 0.02em;
+        }
+        .leaflet-control-layers input[type="radio"] {
+            accent-color: #5aa9ff;
+        }
+
+        /* ─── OVERLAY INFO (on top of map) ─── */
         .map-overlay {
             position: absolute;
             bottom: 24px;
@@ -142,38 +182,40 @@
             pointer-events: none;
             gap: 16px;
             flex-wrap: wrap;
+            z-index: 500;
         }
 
         .map-overlay .district-label {
             font-size: 20px;
             font-weight: 700;
             color: #fff;
-            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(0, 0, 0, 0.2);
             letter-spacing: -0.01em;
-            line-height: 1.2;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            padding: 6px 18px 8px 18px;
+            padding: 6px 20px 8px 20px;
             border-radius: 100px;
             border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: auto;
         }
 
         .map-overlay .stats {
             display: flex;
             gap: 20px;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            padding: 6px 18px 8px 18px;
+            padding: 6px 20px 8px 20px;
             border-radius: 100px;
             border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: auto;
         }
 
         .map-overlay .stats span {
             font-size: 12px;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.7);
             letter-spacing: 0.02em;
         }
 
@@ -188,15 +230,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 18px;
-            padding: 0 6px;
+            margin-top: 16px;
+            padding: 0 4px;
         }
 
         .card-footer .credit {
             font-size: 13px;
             color: rgba(255, 255, 255, 0.25);
             font-weight: 400;
-            letter-spacing: 0.02em;
         }
 
         .card-footer .credit a {
@@ -220,12 +261,12 @@
         /* ─── RESPONSIVE ─── */
         @media (max-width: 820px) {
             .floating-card {
-                padding: 18px 18px 22px;
+                padding: 16px 16px 20px;
                 border-radius: 32px;
                 animation-duration: 8s;
             }
-            .floating-card::before {
-                border-radius: 32px;
+            #leafletMap {
+                height: 380px;
             }
             .card-header h1 {
                 font-size: 19px;
@@ -238,18 +279,10 @@
                 font-size: 10px;
                 padding: 4px 12px;
             }
-            .map-wrapper {
-                border-radius: 20px;
-            }
-            .map-wrapper canvas {
-                aspect-ratio: 700 / 520;
-                border-radius: 20px;
-            }
             .map-overlay {
                 bottom: 16px;
                 left: 16px;
                 right: 16px;
-                gap: 10px;
             }
             .map-overlay .district-label {
                 font-size: 15px;
@@ -267,12 +300,6 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 6px;
-            }
-            .card-footer .credit {
-                font-size: 11px;
-            }
-            .card-footer .coords {
-                font-size: 10px;
             }
         }
 
@@ -293,16 +320,12 @@
                 display: block;
                 margin-left: 0;
             }
-            .badge {
-                font-size: 9px;
-                padding: 3px 10px;
+            #leafletMap {
+                height: 300px;
             }
             .map-overlay .district-label {
                 font-size: 13px;
                 padding: 3px 12px 5px 12px;
-            }
-            .map-overlay .stats span {
-                font-size: 9px;
             }
         }
     </style>
@@ -316,12 +339,14 @@
                 🗺️ Balod
                 <span>Chhattisgarh</span>
             </h1>
-            <div class="badge">District</div>
+            <div class="badge">Free layers</div>
         </div>
 
         <!-- Map -->
         <div class="map-wrapper">
-            <canvas id="mapCanvas" width="700" height="520"></canvas>
+            <div id="leafletMap"></div>
+
+            <!-- Overlay (still visible, sitting above map) -->
             <div class="map-overlay">
                 <div class="district-label">📍 Balod</div>
                 <div class="stats">
@@ -333,288 +358,212 @@
 
         <!-- Footer -->
         <div class="card-footer">
-            <div class="credit">District boundary &bull; Chhattisgarh</div>
+            <div class="credit">
+                <a href="#" target="_blank">OpenStreetMap</a> &nbsp;·&nbsp;
+                <a href="#" target="_blank">ESRI Satellite</a>
+            </div>
             <div class="coords">81.0°E &nbsp; 20.7°N</div>
         </div>
     </div>
 
     <script>
         (function() {
-            // ─── GeoJSON polygon for Balod ───
-            const coordinates = [
-                [
-                    [81.47208437694013, 20.87066677340983],
-                    [81.42050312425289, 20.84990654083687],
-                    [81.40484957625326, 20.94010255810977],
-                    [81.42007386254562, 21.00635220310497],
-                    [81.36557932905708, 21.038004402293033],
-                    [81.22426333678403, 21.04689812596278],
-                    [81.15484738390835, 21.076561011453496],
-                    [81.1206880347768, 21.00461741229337],
-                    [81.03299903768558, 20.995814581710114],
-                    [80.97229889676476, 21.007374839079567],
-                    [80.9406036983932, 20.977457613289438],
-                    [80.97522586602825, 20.828856155922345],
-                    [80.89509295542558, 20.80589271763955],
-                    [80.82327428854296, 20.764644568875628],
-                    [80.80321381157404, 20.72221124549754],
-                    [80.86221387441222, 20.665452124601106],
-                    [80.9532090048915, 20.639809425040262],
-                    [81.00658127288207, 20.59829624782952],
-                    [80.95419392264529, 20.54081228762229],
-                    [80.99187853501363, 20.459290564777497],
-                    [81.14920379759242, 20.37698347774269],
-                    [81.25436809224875, 20.44756340807144],
-                    [81.26358160467245, 20.50842965154173],
-                    [81.3245131928626, 20.562795315460125],
-                    [81.3865921446678, 20.533393106470207],
-                    [81.41036241819731, 20.554432810242265],
-                    [81.49372304348584, 20.602573101161607],
-                    [81.51608857627083, 20.713558038749824],
-                    [81.47856206084373, 20.776063631914983],
-                    [81.51703332811586, 20.827760093574327],
-                    [81.47208437694013, 20.87066677340983]
-                ]
-            ];
-
-            // ─── Canvas setup ───
-            const canvas = document.getElementById('mapCanvas');
-            const ctx = canvas.getContext('2d');
-
-            // Physical canvas size (CSS will scale it)
-            const W = 700;
-            const H = 520;
-            canvas.width = W;
-            canvas.height = H;
-
-            // ─── Compute bounds ───
-            const pts = coordinates[0];
-            let minLon = Infinity,
-                maxLon = -Infinity;
-            let minLat = Infinity,
-                maxLat = -Infinity;
-
-            for (const p of pts) {
-                const lon = p[0];
-                const lat = p[1];
-                if (lon < minLon) minLon = lon;
-                if (lon > maxLon) maxLon = lon;
-                if (lat < minLat) minLat = lat;
-                if (lat > maxLat) maxLat = lat;
-            }
-
-            // Add padding (5%)
-            const padLon = (maxLon - minLon) * 0.05;
-            const padLat = (maxLat - minLat) * 0.05;
-            minLon -= padLon;
-            maxLon += padLon;
-            minLat -= padLat;
-            maxLat += padLat;
-
-            const lonRange = maxLon - minLon;
-            const latRange = maxLat - minLat;
-
-            // ─── Transformation ───
-            function toPixel(lon, lat) {
-                // Preserve aspect ratio, fit inside canvas with some margin
-                const margin = 32;
-                const availW = W - margin * 2;
-                const availH = H - margin * 2;
-
-                // Choose scale to fit both dimensions
-                const scale = Math.min(availW / lonRange, availH / latRange);
-
-                const offsetX = (availW - lonRange * scale) / 2 + margin;
-                const offsetY = (availH - latRange * scale) / 2 + margin;
-
-                const x = (lon - minLon) * scale + offsetX;
-                const y = (maxLat - lat) * scale + offsetY; // invert y
-                return { x, y };
-            }
-
-            // ─── Render ───
-            function render() {
-                ctx.clearRect(0, 0, W, H);
-
-                // --- 1. subtle background glow ---
-                const grad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, 420);
-                grad.addColorStop(0, 'rgba(60, 130, 200, 0.04)');
-                grad.addColorStop(0.5, 'rgba(40, 90, 160, 0.02)');
-                grad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, W, H);
-
-                // --- 2. draw the polygon ---
-                const pixelPts = pts.map(p => toPixel(p[0], p[1]));
-
-                // shadow / glow layer
-                ctx.save();
-                ctx.shadowColor = 'rgba(100, 200, 255, 0.15)';
-                ctx.shadowBlur = 40;
-                ctx.beginPath();
-                ctx.moveTo(pixelPts[0].x, pixelPts[0].y);
-                for (let i = 1; i < pixelPts.length; i++) {
-                    ctx.lineTo(pixelPts[i].x, pixelPts[i].y);
+            // ─── GeoJSON polygon for Balod (same coordinates) ───
+            const geojsonData = {
+                type: "Feature",
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [
+                        [
+                            [81.47208437694013, 20.87066677340983],
+                            [81.42050312425289, 20.84990654083687],
+                            [81.40484957625326, 20.94010255810977],
+                            [81.42007386254562, 21.00635220310497],
+                            [81.36557932905708, 21.038004402293033],
+                            [81.22426333678403, 21.04689812596278],
+                            [81.15484738390835, 21.076561011453496],
+                            [81.1206880347768, 21.00461741229337],
+                            [81.03299903768558, 20.995814581710114],
+                            [80.97229889676476, 21.007374839079567],
+                            [80.9406036983932, 20.977457613289438],
+                            [80.97522586602825, 20.828856155922345],
+                            [80.89509295542558, 20.80589271763955],
+                            [80.82327428854296, 20.764644568875628],
+                            [80.80321381157404, 20.72221124549754],
+                            [80.86221387441222, 20.665452124601106],
+                            [80.9532090048915, 20.639809425040262],
+                            [81.00658127288207, 20.59829624782952],
+                            [80.95419392264529, 20.54081228762229],
+                            [80.99187853501363, 20.459290564777497],
+                            [81.14920379759242, 20.37698347774269],
+                            [81.25436809224875, 20.44756340807144],
+                            [81.26358160467245, 20.50842965154173],
+                            [81.3245131928626, 20.562795315460125],
+                            [81.3865921446678, 20.533393106470207],
+                            [81.41036241819731, 20.554432810242265],
+                            [81.49372304348584, 20.602573101161607],
+                            [81.51608857627083, 20.713558038749824],
+                            [81.47856206084373, 20.776063631914983],
+                            [81.51703332811586, 20.827760093574327],
+                            [81.47208437694013, 20.87066677340983]
+                        ]
+                    ]
                 }
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(60, 150, 220, 0.05)';
-                ctx.fill();
-                ctx.restore();
+            };
 
-                // main fill with gradient
-                const fillGrad = ctx.createLinearGradient(0, 0, W * 0.6, H);
-                fillGrad.addColorStop(0, 'rgba(30, 144, 220, 0.55)');
-                fillGrad.addColorStop(0.5, 'rgba(20, 100, 180, 0.50)');
-                fillGrad.addColorStop(1, 'rgba(10, 60, 130, 0.45)');
-
-                ctx.beginPath();
-                ctx.moveTo(pixelPts[0].x, pixelPts[0].y);
-                for (let i = 1; i < pixelPts.length; i++) {
-                    ctx.lineTo(pixelPts[i].x, pixelPts[i].y);
-                }
-                ctx.closePath();
-                ctx.fillStyle = fillGrad;
-                ctx.fill();
-
-                // inner highlight (subtle)
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(pixelPts[0].x, pixelPts[0].y);
-                for (let i = 1; i < pixelPts.length; i++) {
-                    ctx.lineTo(pixelPts[i].x, pixelPts[i].y);
-                }
-                ctx.closePath();
-                ctx.clip();
-
-                const hl = ctx.createRadialGradient(W * 0.3, H * 0.25, 10, W * 0.3, H * 0.25, 300);
-                hl.addColorStop(0, 'rgba(255,255,255,0.06)');
-                hl.addColorStop(1, 'rgba(255,255,255,0)');
-                ctx.fillStyle = hl;
-                ctx.fillRect(0, 0, W, H);
-                ctx.restore();
-
-                // stroke with glow
-                ctx.save();
-                ctx.shadowColor = 'rgba(100, 210, 255, 0.25)';
-                ctx.shadowBlur = 20;
-                ctx.beginPath();
-                ctx.moveTo(pixelPts[0].x, pixelPts[0].y);
-                for (let i = 1; i < pixelPts.length; i++) {
-                    ctx.lineTo(pixelPts[i].x, pixelPts[i].y);
-                }
-                ctx.closePath();
-                ctx.strokeStyle = 'rgba(140, 220, 255, 0.7)';
-                ctx.lineWidth = 2.2;
-                ctx.stroke();
-                ctx.restore();
-
-                // outer subtle stroke
-                ctx.beginPath();
-                ctx.moveTo(pixelPts[0].x, pixelPts[0].y);
-                for (let i = 1; i < pixelPts.length; i++) {
-                    ctx.lineTo(pixelPts[i].x, pixelPts[i].y);
-                }
-                ctx.closePath();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-                ctx.lineWidth = 0.8;
-                ctx.stroke();
-
-                // --- 3. decorative dots on vertices (subtle) ---
-                for (const p of pixelPts) {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(180, 230, 255, 0.3)';
-                    ctx.fill();
-                }
-
-                // --- 4. centroid marker ---
-                let cx = 0,
-                    cy = 0;
-                for (const p of pixelPts) {
-                    cx += p.x;
-                    cy += p.y;
-                }
-                cx /= pixelPts.length;
-                cy /= pixelPts.length;
-
-                // outer ring
-                const pulse = Date.now() / 1200;
-                const rad = 10 + 3 * Math.sin(pulse);
-                ctx.save();
-                ctx.shadowColor = 'rgba(100, 200, 255, 0.35)';
-                ctx.shadowBlur = 20;
-                ctx.beginPath();
-                ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(180, 230, 255, 0.2)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.restore();
-
-                // inner dot
-                ctx.beginPath();
-                ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(180, 235, 255, 0.7)';
-                ctx.fill();
-                ctx.shadowColor = 'rgba(100, 200, 255, 0.2)';
-                ctx.shadowBlur = 12;
-                ctx.beginPath();
-                ctx.arc(cx, cy, 1.8, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff';
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // --- 5. subtle grid lines (very faint) ---
-                ctx.save();
-                ctx.globalAlpha = 0.04;
-                ctx.strokeStyle = '#8af';
-                ctx.lineWidth = 0.5;
-                for (let i = 0; i <= 8; i++) {
-                    const x = margin + (i / 8) * (W - margin * 2);
-                    ctx.beginPath();
-                    ctx.moveTo(x, margin);
-                    ctx.lineTo(x, H - margin);
-                    ctx.stroke();
-                }
-                for (let i = 0; i <= 6; i++) {
-                    const y = margin + (i / 6) * (H - margin * 2);
-                    ctx.beginPath();
-                    ctx.moveTo(margin, y);
-                    ctx.lineTo(W - margin, y);
-                    ctx.stroke();
-                }
-                ctx.restore();
-
-                // --- 6. watermark text (very subtle) ---
-                ctx.save();
-                ctx.globalAlpha = 0.04;
-                ctx.fillStyle = '#fff';
-                ctx.font = '10px "Inter", sans-serif';
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText('Balod · Chhattisgarh', W - 20, H - 16);
-                ctx.restore();
-
-                // --- 7. animate pulse ---
-                requestAnimationFrame(render);
-            }
-
-            render();
-
-            // ─── Handle resize ───
-            function handleResize() {
-                // The canvas CSS handles scaling; no need to re-render
-            }
-            window.addEventListener('resize', handleResize);
-
-            // ─── Tooltip / hover effect (optional) ───
-            canvas.addEventListener('mousemove', (e) => {
-                // just a subtle cursor change
-                canvas.style.cursor = 'default';
+            // ─── Initialize map ───
+            const map = L.map('leafletMap', {
+                center: [20.78, 81.05],
+                zoom: 10,
+                zoomControl: true,
+                fadeAnimation: true,
+                zoomAnimation: true,
+                attributionControl: true
             });
 
-            console.log('🗺️ Balod district map rendered');
+            // ─── Base layers (free) ───
+
+            // 1. OpenStreetMap (roads / standard)
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+            // 2. ESRI Satellite (free for non‑commercial)
+            const satelliteLayer = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://esri.com">ESRI</a> &amp; contributors'
+                }
+            );
+
+            // 3. (Bonus) OpenStreetMap "Humanitarian" – slightly different style
+            const osmHumanitarian = L.tileLayer(
+                'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://openstreetmap.fr/hot">OSM Humanitarian</a>'
+                }
+            );
+
+            // ─── Add default layer ───
+            osmLayer.addTo(map);
+
+            // ─── Layer control ───
+            const baseMaps = {
+                "🗺️ Roads (OSM)": osmLayer,
+                "🛰️ Satellite (ESRI)": satelliteLayer,
+                "🧭 Humanitarian (OSM)": osmHumanitarian
+            };
+            L.control.layers(baseMaps, null, {
+                position: 'topright',
+                collapsed: false
+            }).addTo(map);
+
+            // ─── Draw Balod polygon ───
+            const polygonStyle = {
+                color: '#6bc9ff',
+                weight: 3,
+                opacity: 0.85,
+                fillColor: '#1a6bb0',
+                fillOpacity: 0.25,
+                smoothFactor: 1,
+                dashArray: null,
+                lineCap: 'round',
+                lineJoin: 'round'
+            };
+
+            const balodLayer = L.geoJSON(geojsonData, {
+                style: polygonStyle,
+                onEachFeature: function(feature, layer) {
+                    // Bind a simple popup
+                    layer.bindPopup(`
+                            <strong>Balod District</strong><br>
+                            Chhattisgarh, India<br>
+                            Area: ~3,249 km²
+                        `, {
+                        className: 'custom-popup',
+                        offset: [0, -8]
+                    });
+                    // Optional: highlight on hover
+                    layer.on('mouseover', function() {
+                        this.setStyle({
+                            weight: 4,
+                            color: '#8ad4ff',
+                            fillOpacity: 0.35
+                        });
+                        this.bringToFront();
+                    });
+                    layer.on('mouseout', function() {
+                        this.setStyle(polygonStyle);
+                    });
+                }
+            }).addTo(map);
+
+            // ─── Fit map to polygon bounds ───
+            map.fitBounds(balodLayer.getBounds(), {
+                padding: [40, 40],
+                maxZoom: 13
+            });
+
+            // ─── Add a small marker at centroid (optional) ───
+            const centroid = [20.76, 81.06]; // approximate
+            const marker = L.circleMarker(centroid, {
+                radius: 5,
+                color: '#fff',
+                weight: 1,
+                opacity: 0.9,
+                fillColor: '#5aa9ff',
+                fillOpacity: 0.8,
+                pulsating: true
+            }).addTo(map);
+            marker.bindPopup('Balod · district centre', {
+                offset: [0, -12]
+            });
+
+            // ─── Custom CSS for popup ───
+            const style = document.createElement('style');
+            style.textContent = `
+                    .custom-popup .leaflet-popup-content-wrapper {
+                        background: rgba(10, 20, 35, 0.85);
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        border-radius: 16px;
+                        color: #eaf4ff;
+                        font-family: 'Inter', system-ui, sans-serif;
+                        box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+                    }
+                    .custom-popup .leaflet-popup-tip {
+                        background: rgba(10, 20, 35, 0.85);
+                        border: 1px solid rgba(255,255,255,0.08);
+                    }
+                    .custom-popup .leaflet-popup-content {
+                        padding: 8px 12px;
+                        font-size: 14px;
+                        line-height: 1.6;
+                    }
+                    .custom-popup strong {
+                        color: #8acbff;
+                        font-weight: 600;
+                    }
+                `;
+            document.head.appendChild(style);
+
+            // ─── Fix for zoom control overlap with layer control ───
+            // (just a small visual tweak)
+            setTimeout(() => {
+                const zoomControl = document.querySelector('.leaflet-control-zoom');
+                if (zoomControl) {
+                    zoomControl.style.marginTop = '8px';
+                }
+            }, 100);
+
+            // ─── Handle resize ───
+            window.addEventListener('resize', () => {
+                map.invalidateSize();
+            });
+
+            console.log('🗺️ Balod map with free layers (OSM, ESRI Satellite) loaded.');
         })();
     </script>
 
